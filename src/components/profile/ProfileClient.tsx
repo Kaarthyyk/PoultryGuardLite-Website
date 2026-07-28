@@ -8,7 +8,10 @@ import { useState } from 'react';
 import { User, Mail, LogOut, Loader2, Building, Phone, MapPin, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { updateProfile } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import auth from '@/lib/firebase/auth';
+import db from '@/lib/firebase/firestore';
+import { useEffect } from 'react';
 
 export function ProfileClient() {
   const { user, signOut } = useAuth();
@@ -18,6 +21,58 @@ export function ProfileClient() {
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  
+  // Contact Info state
+  const [companyName, setCompanyName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [address, setAddress] = useState('');
+  const [isContactLoading, setIsContactLoading] = useState(true);
+  const [isSavingContact, setIsSavingContact] = useState(false);
+
+  useEffect(() => {
+    async function loadContactInfo() {
+      if (!user?.uid) return;
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setCompanyName(data.companyName || '');
+          setPhoneNumber(data.phoneNumber || '');
+          setAddress(data.address || '');
+        }
+      } catch (err) {
+        console.error('Failed to load contact info', err);
+      } finally {
+        setIsContactLoading(false);
+      }
+    }
+    loadContactInfo();
+  }, [user?.uid]);
+
+  const handleUpdateContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.uid) return;
+    
+    setIsSavingContact(true);
+    try {
+      await setDoc(
+        doc(db, 'users', user.uid),
+        {
+          companyName,
+          phoneNumber,
+          address,
+          updatedAt: new Date().toISOString()
+        },
+        { merge: true }
+      );
+      toast('Contact information saved successfully', 'success');
+    } catch (err) {
+      toast('Failed to save contact information', 'error');
+      console.error(err);
+    } finally {
+      setIsSavingContact(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,40 +164,64 @@ export function ProfileClient() {
         </form>
       </div>
 
-      <div className="rounded-2xl p-6 glass border border-border/50 opacity-80">
-        <div className="flex items-center gap-2 mb-4">
-          <Info className="w-4 h-4 text-amber-400" />
-          <h3 className="font-semibold text-foreground">Company & Contact Information</h3>
+      <div className="rounded-2xl p-6 glass border border-border/50">
+        <div className="flex items-center gap-2 mb-6">
+          <Building className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-foreground text-lg">Company & Contact Information</h3>
         </div>
-        <p className="text-sm text-muted-foreground mb-6">
-          This feature requires a backend schema update (users collection) and is currently disabled in v1.0.
-        </p>
 
-        <div className="space-y-4 pointer-events-none">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Company Name</label>
-              <div className="relative">
-                <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input disabled placeholder="Poultry Farms Ltd." className="pl-10 opacity-50" />
+        {isContactLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <form onSubmit={handleUpdateContact} className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Company Name</label>
+                <div className="relative">
+                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <Input 
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Poultry Farms Ltd." 
+                    className="pl-10" 
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Phone Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <Input 
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+1 234 567 890" 
+                    className="pl-10" 
+                  />
+                </div>
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Phone Number</label>
+              <label className="text-sm font-medium text-foreground">Address</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input disabled placeholder="+1 234 567 890" className="pl-10 opacity-50" />
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Input 
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="123 Farm Road, Country" 
+                  className="pl-10" 
+                />
               </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Address</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input disabled placeholder="123 Farm Road, Country" className="pl-10 opacity-50" />
+
+            <div className="pt-2 flex justify-end">
+              <Button type="submit" loading={isSavingContact}>
+                Save Contact Info
+              </Button>
             </div>
-          </div>
-        </div>
+          </form>
+        )}
       </div>
 
       <div className="rounded-2xl p-6 border border-red-500/20 bg-red-500/5">

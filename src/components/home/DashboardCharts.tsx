@@ -8,7 +8,7 @@ import {
 import type { Batch, WeeklyEntry, ScanHistory } from '@/types/models';
 import { formatDate } from '@/lib/utils';
 
-const COLORS = ['#F4A900', '#4ADE80', '#F87171', '#60A5FA', '#A78BFA'];
+const COLORS = ['#F4A900', '#2E7D32', '#1E88E5', '#D81B60', '#8E24AA', '#F87171', '#60A5FA'];
 
 export function DashboardCharts({
   entries,
@@ -34,12 +34,46 @@ export function DashboardCharts({
 
   // 2. Disease Distribution
   const diseaseData = useMemo(() => {
+    if (scans.length === 0) return [];
+    
+    const totalScans = scans.length;
     const counts: Record<string, number> = {};
+    
     scans.forEach(s => {
-      const name = s.result.diseaseName;
+      // Group identically named diseases and trim whitespace
+      const name = s.result.diseaseName.trim();
       counts[name] = (counts[name] || 0) + 1;
     });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    
+    const data = Object.entries(counts)
+      .map(([name, value]) => ({ 
+        name, 
+        value, 
+        percentage: (value / totalScans) * 100 
+      }))
+      .sort((a, b) => b.value - a.value);
+      
+    // Group diseases < 5% into 'Others'
+    const finalData: { name: string; value: number; percentage: number }[] = [];
+    let othersCount = 0;
+    
+    data.forEach(item => {
+      if (item.percentage < 5) {
+        othersCount += item.value;
+      } else {
+        finalData.push(item);
+      }
+    });
+    
+    if (othersCount > 0) {
+      finalData.push({
+        name: 'Others',
+        value: othersCount,
+        percentage: (othersCount / totalScans) * 100
+      });
+    }
+    
+    return finalData;
   }, [scans]);
 
   // 3. Feed Usage
@@ -104,20 +138,40 @@ export function DashboardCharts({
               <PieChart>
                 <Pie
                   data={diseaseData}
-                  cx="50%"
+                  cx="40%"
                   cy="50%"
                   innerRadius={60}
-                  outerRadius={100}
+                  outerRadius={90}
                   paddingAngle={5}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  stroke="none"
                 >
                   {diseaseData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#1A1200', borderColor: 'rgba(244,169,0,0.4)', borderRadius: '8px' }} />
-                <Legend />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-[#121212] border border-[#F4A900]/30 rounded-xl p-3 shadow-xl">
+                          <p className="text-sm font-semibold text-foreground mb-1">{data.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {data.value} {data.value === 1 ? 'Scan' : 'Scans'} — {data.percentage.toFixed(0)}%
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend 
+                  layout="vertical" 
+                  verticalAlign="middle" 
+                  align="right"
+                  wrapperStyle={{ fontSize: '12px', color: '#9CA3AF' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           ) : (

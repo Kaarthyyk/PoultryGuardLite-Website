@@ -35,3 +35,9 @@ export const weeklyEntriesCol = (farmId: string, batchId: string) =>
 
 /** /scan_history — top-level collection */
 export const scanHistoryCol = () => collection(db, 'scan_history');
+
+/** /sales — top-level collection */
+export const salesCol = () => collection(db, 'sales');
+
+/** /veterinarians — top-level collection */
+export const veterinariansCol = () => collection(db, 'veterinarians');

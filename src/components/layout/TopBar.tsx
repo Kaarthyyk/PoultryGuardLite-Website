@@ -10,6 +10,9 @@ import {
   Settings,
   Menu,
   X,
+  DollarSign,
+  Stethoscope,
+  Bell
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,6 +26,9 @@ const NAV_ITEMS = [
   { href: '/farms', label: 'Farms', icon: Building2 },
   { href: '/scan', label: 'AI Scan', icon: ScanLine },
   { href: '/history', label: 'Reports', icon: BarChart3 },
+  { href: '/sales', label: 'Sales', icon: DollarSign },
+  { href: '/directory', label: 'Directory', icon: Stethoscope },
+  { href: '/reminders', label: 'Reminders', icon: Bell },
   { href: '/profile', label: 'Settings', icon: Settings },
 ];
 

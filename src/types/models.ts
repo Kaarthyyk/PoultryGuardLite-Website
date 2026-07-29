@@ -136,6 +136,33 @@ export interface ScanHistory {
   updatedAt?: Date;
 }
 
+// ── Sales ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Firestore path: /sales/{saleId}
+ */
+export interface Sale {
+  id: string;
+  farmId: string;
+  batchId: string;
+  ownerId: string;
+  saleDate?: Date;
+  birdsSold: number;
+  averageWeight: number;
+  pricePerKg: number;
+  buyerName: string;
+  buyerContact: string;
+  invoiceNumber: string;
+  notes: string;
+  totalWeight: number;
+  revenue: number;
+  estimatedProfit: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export type SaleInput = Omit<Sale, 'id' | 'ownerId' | 'totalWeight' | 'revenue' | 'estimatedProfit' | 'createdAt' | 'updatedAt'>;
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 /** Minimal user info derived from Firebase Auth User */
@@ -145,3 +172,23 @@ export interface AppUser {
   displayName: string | null;
   photoURL: string | null;
 }
+
+// ── Veterinarian ──────────────────────────────────────────────────────────────
+
+/**
+ * Firestore path: /veterinarians/{id}
+ */
+export interface Veterinarian {
+  id: string;
+  doctorName: string;
+  phoneNumber: string;
+  whatsappNumber: string;
+  email: string;
+  address: string;
+  isEmergency: boolean;
+  ownerId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export type VeterinarianInput = Omit<Veterinarian, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>;

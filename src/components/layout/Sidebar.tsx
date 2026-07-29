@@ -12,6 +12,9 @@ import {
   User,
   LogOut,
   ChevronRight,
+  DollarSign,
+  Stethoscope,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -24,6 +27,9 @@ const NAV_ITEMS = [
   { href: '/farms', label: 'Farms', icon: Building2 },
   { href: '/scan', label: 'AI Scan', icon: ScanLine },
   { href: '/history', label: 'Reports', icon: BarChart3 },
+  { href: '/sales', label: 'Sales', icon: DollarSign },
+  { href: '/directory', label: 'Veterinarians', icon: Stethoscope },
+  { href: '/reminders', label: 'Reminders', icon: Bell },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

@@ -12,6 +12,11 @@ import type { WeeklyEntry, WeeklyEntryInput } from '@/types/models';
 import { useToast } from '@/components/ui/Toast';
 import { ArrowLeft, Edit2, Trash2, Droplet, Wheat, Thermometer, Wind } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useFarms } from '@/hooks/useFarms';
+import { useBatch } from '@/hooks/useBatches';
+import { useScanHistory } from '@/hooks/useScanHistory';
+import { generateWeeklyReportPdf } from '@/lib/pdf';
+import { Download, Printer } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: string }) {
@@ -21,6 +26,11 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
   const updateEntry = useUpdateEntry();
   const deleteMutation = useDeleteEntry();
   const { toast } = useToast();
+
+  const { data: farms } = useFarms();
+  const farm = farms?.find(f => f.id === farmId);
+  const { data: batch } = useBatch(farmId, batchId);
+  const { data: allScans } = useScanHistory();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<WeeklyEntry | undefined>();
@@ -68,6 +78,39 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
     }
   };
 
+  const handleGeneratePdf = async (entry: WeeklyEntry, action: 'download' | 'print') => {
+    if (!farm || !batch) {
+      toast('Missing farm or batch data.', 'error');
+      return;
+    }
+    try {
+      // Get scans for that week (simple approach: scans created in the 7 days prior to entryDate)
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const entryTime = entry.entryDate?.getTime() || new Date().getTime();
+      const weekBefore = entryTime - 7 * 24 * 60 * 60 * 1000;
+      
+      const scansForWeek = (allScans || []).filter(scan => {
+        if (!scan.createdAt) return false;
+        const scanTime = scan.createdAt.getTime();
+        return scan.batchId === batchId && scanTime >= weekBefore && scanTime <= entryTime;
+      });
+
+      const doc = await generateWeeklyReportPdf(farm, batch, [entry], scansForWeek);
+      
+      if (action === 'download') {
+        doc.save(`Weekly_Report_${batch.batchName}_${formatDate(new Date())}.pdf`);
+        toast('PDF generated successfully', 'success');
+      } else {
+        doc.autoPrint();
+        const blobUrl = doc.output('bloburl');
+        window.open(blobUrl, '_blank');
+      }
+    } catch (err) {
+      console.error(err);
+      toast('Failed to generate PDF', 'error');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -101,6 +144,12 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
                   <p className="text-xs text-muted-foreground mt-1">Mortality: <span className="text-red-400 font-semibold">{entry.mortalityCount} birds</span></p>
                 </div>
                 <div className="flex gap-2">
+                  <Button size="icon" variant="ghost" title="Download PDF" onClick={() => handleGeneratePdf(entry, 'download')}>
+                    <Download className="w-4 h-4 text-blue-500" />
+                  </Button>
+                  <Button size="icon" variant="ghost" title="Print" onClick={() => handleGeneratePdf(entry, 'print')}>
+                    <Printer className="w-4 h-4 text-emerald-500" />
+                  </Button>
                   <Button size="icon" variant="ghost" onClick={() => handleOpenModal(entry)}>
                     <Edit2 className="w-4 h-4" />
                   </Button>

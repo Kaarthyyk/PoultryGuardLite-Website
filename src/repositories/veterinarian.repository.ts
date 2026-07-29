@@ -70,7 +70,7 @@ export const VeterinarianRepository = {
   },
 
   async updateVeterinarian(id: string, data: Partial<VeterinarianInput>): Promise<void> {
-    const uid = requireUid();
+    requireUid();
     const docRef = doc(db, 'veterinarians', id);
     // Ideally we would verify ownerId here but client side checking isn't full security anyway
     
@@ -81,7 +81,7 @@ export const VeterinarianRepository = {
   },
 
   async deleteVeterinarian(id: string): Promise<void> {
-    const uid = requireUid();
+    requireUid();
     const docRef = doc(db, 'veterinarians', id);
     await deleteDoc(docRef);
   },

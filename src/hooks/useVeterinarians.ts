@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { VeterinarianRepository } from '@/repositories/veterinarian.repository';
-import type { VeterinarianInput, Veterinarian } from '@/types/models';
+import type { VeterinarianInput } from '@/types/models';
 
 export function useVeterinarians() {
   const queryClient = useQueryClient();

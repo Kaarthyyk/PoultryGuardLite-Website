@@ -1,7 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useBatches, useAddBatch, useUpdateBatch } from '@/hooks/useBatches';
+import { EntryRepository } from '@/repositories/entry.repository';
+import { SaleRepository } from '@/repositories/sale.repository';
+import { calculateTotalMortality, calculateTotalBirdsSold, calculateRemainingBirds } from '@/lib/calculations';
+import type { WeeklyEntry, Sale } from '@/types/models';
+import { useState, useEffect } from 'react';
 import { BatchCard } from '@/components/batches/BatchCard';
 import { BatchForm } from '@/components/batches/BatchForm';
 import { Modal } from '@/components/ui/Modal';
@@ -25,8 +29,46 @@ export function BatchesClient({ farmId }: { farmId: string }) {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBatch, setEditingBatch] = useState<Batch | undefined>();
+  const [entries, setEntries] = useState<WeeklyEntry[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loadingStats, setLoadingStats] = useState(false);
 
-  if (isLoading) return <LoadingScreen />;
+  useEffect(() => {
+    let isMounted = true;
+    const fetchStats = async () => {
+      if (!batches || batches.length === 0) {
+        if (isMounted) {
+          setEntries([]);
+          setSales([]);
+        }
+        return;
+      }
+      setLoadingStats(true);
+      try {
+        const entryPromises = batches.map(b => EntryRepository.getEntries(b.farmId, b.id));
+        const salesPromises = batches.map(b => SaleRepository.getSales(b.farmId, b.id));
+        const entryResults = await Promise.all(entryPromises);
+        const salesResults = await Promise.all(salesPromises);
+        
+        if (isMounted) {
+          setEntries(entryResults.flat());
+          setSales(salesResults.flat());
+        }
+      } catch (err) {
+        console.error("Failed to fetch stats", err);
+      } finally {
+        if (isMounted) setLoadingStats(false);
+      }
+    };
+    
+    fetchStats();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [batches]);
+
+  if (isLoading || loadingStats) return <LoadingScreen />;
   if (error) return <ErrorState title="Failed to load batches" />;
 
   const handleOpenModal = (batch?: Batch) => {
@@ -62,14 +104,23 @@ export function BatchesClient({ farmId }: { farmId: string }) {
     
     const { doc, startY, addFooter } = await createBrandedPDF('PoultryGuardLite Batch Report');
     
-    const tableData = batches.map(b => [
-      b.batchName,
-      b.birdType,
-      b.breed,
-      b.status,
-      b.currentBirds.toLocaleString(),
-      b.arrivalDate ? formatDate(b.arrivalDate) : 'Unknown'
-    ]);
+    const tableData = batches.map(b => {
+      const batchEntries = entries.filter(e => e.batchId === b.id);
+      const batchSales = sales.filter(s => s.batchId === b.id);
+      
+      const mortality = calculateTotalMortality(batchEntries);
+      const birdsSold = calculateTotalBirdsSold(batchSales);
+      const remainingBirds = calculateRemainingBirds(b.totalBirds, mortality, birdsSold);
+      
+      return [
+        b.batchName,
+        b.birdType,
+        b.breed,
+        b.status,
+        remainingBirds.toLocaleString(),
+        b.arrivalDate ? formatDate(b.arrivalDate) : 'Unknown'
+      ];
+    });
 
     autoTable(doc, {
       startY,
@@ -109,9 +160,22 @@ export function BatchesClient({ farmId }: { farmId: string }) {
 
       {batches && batches.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {batches.map((batch) => (
-            <BatchCard key={batch.id} batch={batch} onEdit={handleOpenModal} />
-          ))}
+          {batches.map((batch) => {
+            const batchEntries = entries.filter(e => e.batchId === batch.id);
+            const batchSales = sales.filter(s => s.batchId === batch.id);
+            const mortality = calculateTotalMortality(batchEntries);
+            const birdsSold = calculateTotalBirdsSold(batchSales);
+            const remainingBirds = calculateRemainingBirds(batch.totalBirds, mortality, birdsSold);
+            
+            return (
+              <BatchCard 
+                key={batch.id} 
+                batch={batch} 
+                remainingBirds={remainingBirds} 
+                onEdit={handleOpenModal} 
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="rounded-2xl p-8 text-center glass">

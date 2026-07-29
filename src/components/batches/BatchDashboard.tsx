@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useBatch } from '@/hooks/useBatches';
 import { useEntries } from '@/hooks/useEntries';
+import { useSales } from '@/hooks/useSales';
 import { useScanHistory } from '@/hooks/useScanHistory';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { ErrorState } from '@/components/ui/States';
@@ -10,10 +11,17 @@ import { EntriesClient } from '@/components/entries/EntriesClient';
 import { Activity, Users, Droplets, Wheat, CheckCircle } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import {
+  calculateTotalMortality,
+  calculateTotalBirdsSold,
+  calculateRemainingBirds,
+  calculateMortalityPercent
+} from '@/lib/calculations';
 
 export function BatchDashboard({ farmId, batchId }: { farmId: string; batchId: string }) {
   const { data: batch, isLoading: loadingBatch, error: errorBatch } = useBatch(farmId, batchId);
   const { data: entries, isLoading: loadingEntries } = useEntries(farmId, batchId);
+  const { data: sales, isLoading: loadingSales } = useSales(farmId, batchId);
   const { data: scans, isLoading: loadingScans } = useScanHistory();
   const router = useRouter();
 
@@ -23,10 +31,19 @@ export function BatchDashboard({ farmId, batchId }: { farmId: string; batchId: s
 
   const totalFeed = useMemo(() => entries?.reduce((sum, e) => sum + e.feedConsumedKg, 0) ?? 0, [entries]);
   const totalWater = useMemo(() => entries?.reduce((sum, e) => sum + e.waterConsumedLitres, 0) ?? 0, [entries]);
-  const mortality = useMemo(() => entries?.reduce((sum, e) => sum + e.mortalityCount, 0) ?? 0, [entries]);
-  const mortalityPercent = batch?.totalBirds ? ((mortality / batch.totalBirds) * 100).toFixed(1) : '0.0';
+  
+  const { remainingBirds, mortality, mortalityPercent } = useMemo(() => {
+    if (!batch) return { remainingBirds: 0, mortality: 0, mortalityPercent: '0.0' };
+    
+    const mortalityCount = calculateTotalMortality(entries || []);
+    const birdsSold = calculateTotalBirdsSold(sales || []);
+    const remaining = calculateRemainingBirds(batch.totalBirds, mortalityCount, birdsSold);
+    const percent = calculateMortalityPercent(batch.totalBirds, mortalityCount);
+    
+    return { remainingBirds: remaining, mortality: mortalityCount, mortalityPercent: percent };
+  }, [batch, entries, sales]);
 
-  if (loadingBatch || loadingEntries || loadingScans) return <LoadingScreen />;
+  if (loadingBatch || loadingEntries || loadingSales || loadingScans) return <LoadingScreen />;
   if (errorBatch || !batch) return <ErrorState title="Failed to load batch details" />;
 
   return (
@@ -48,7 +65,7 @@ export function BatchDashboard({ farmId, batchId }: { farmId: string; batchId: s
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Current Birds</p>
           </div>
           <p className="text-2xl font-bold text-foreground">
-            {batch.currentBirds.toLocaleString()} <span className="text-sm text-muted-foreground font-normal">/ {batch.totalBirds.toLocaleString()}</span>
+            {remainingBirds.toLocaleString()} <span className="text-sm text-muted-foreground font-normal">/ {batch.totalBirds.toLocaleString()}</span>
           </p>
         </div>
         

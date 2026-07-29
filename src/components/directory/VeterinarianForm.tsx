@@ -12,7 +12,7 @@ const vetSchema = z.object({
   doctorName: z.string().min(2, 'Name must be at least 2 characters').max(80),
   phoneNumber: z.string().min(1, 'Phone number is required').max(20),
   whatsappNumber: z.string().min(1, 'WhatsApp number is required').max(20),
-  email: z.string().email('Invalid email address').max(100),
+  email: z.string().email('Invalid email address').max(100).or(z.literal('')),
   address: z.string().min(1, 'Clinic/Address is required').max(200),
   isEmergency: z.boolean(),
 });
@@ -67,11 +67,19 @@ export function VeterinarianForm({ defaultValues, onSubmit, onCancel, loading }:
   }, [defaultValues, reset]);
 
   const handleFormSubmit = async (data: VetFormValues) => {
+    let cleanEmail = (data.email || '').trim();
+    if (cleanEmail.toLowerCase().startsWith('mailto:')) {
+      cleanEmail = cleanEmail.substring(7);
+    }
+    if (cleanEmail.toLowerCase().startsWith('https://')) {
+      cleanEmail = cleanEmail.substring(8);
+    }
+    
     await onSubmit({
       doctorName: data.doctorName,
       phoneNumber: data.phoneNumber,
       whatsappNumber: data.whatsappNumber,
-      email: data.email,
+      email: cleanEmail,
       address: data.address,
       isEmergency: data.isEmergency,
     });

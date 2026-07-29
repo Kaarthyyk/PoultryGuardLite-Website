@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar as CalendarIcon, Bell, CheckCircle2, Clock, CalendarDays, Syringe, Wheat, FileText } from 'lucide-react';
+import { Bell, CheckCircle2, Clock, Syringe, Wheat, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 type ReminderStatus = 'Completed' | 'Pending' | 'Upcoming';

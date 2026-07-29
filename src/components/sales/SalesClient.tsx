@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Edit2, Trash2, DollarSign, Activity, TrendingUp, Users, Download, Printer } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { generateSalesReportPdf } from '@/lib/pdf';
+import { calculateTotalRevenue, calculateTotalBirdsSold } from '@/lib/calculations';
 
 export function SalesClient() {
   const { data: farms, isLoading: loadingFarms } = useFarms();
@@ -99,9 +100,9 @@ export function SalesClient() {
     }
   };
 
-  const totalSales = sales?.length || 0;
-  const totalRevenue = sales?.reduce((acc, sale) => acc + sale.revenue, 0) || 0;
-  const totalBirdsSold = sales?.reduce((acc, sale) => acc + sale.birdsSold, 0) || 0;
+
+  const totalRevenue = calculateTotalRevenue(sales || []);
+  const totalBirdsSold = calculateTotalBirdsSold(sales || []);
   const totalProfit = sales?.reduce((acc, sale) => acc + (sale.estimatedProfit || 0), 0) || 0;
   const totalWeight = sales?.reduce((acc, sale) => acc + (sale.totalWeight || 0), 0) || 0;
   const averageSellingPrice = sales && totalWeight > 0 ? (totalRevenue / totalWeight).toFixed(2) : '0.00';

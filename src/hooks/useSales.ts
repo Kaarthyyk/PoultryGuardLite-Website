@@ -4,12 +4,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SaleRepository } from '@/repositories/sale.repository';
 import type { Sale, SaleInput } from '@/types/models';
 
-export const salesKey = (farmId: string) => ['sales', farmId] as const;
+export const salesKey = (farmId: string, batchId?: string) => 
+  batchId ? (['sales', farmId, batchId] as const) : (['sales', farmId] as const);
 
-export function useSales(farmId: string) {
+export function useSales(farmId: string, batchId?: string) {
   return useQuery({
-    queryKey: salesKey(farmId),
-    queryFn: () => SaleRepository.getSales(farmId),
+    queryKey: salesKey(farmId, batchId),
+    queryFn: () => SaleRepository.getSales(farmId, batchId),
     enabled: !!farmId,
     staleTime: 30_000,
   });
@@ -34,7 +35,7 @@ export function useUpdateSale() {
 export function useDeleteSale() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ farmId, saleId }: { farmId: string; saleId: string }) =>
+    mutationFn: ({ saleId }: { farmId: string; saleId: string }) =>
       SaleRepository.deleteSale(saleId),
     onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: salesKey(vars.farmId) }),
   });

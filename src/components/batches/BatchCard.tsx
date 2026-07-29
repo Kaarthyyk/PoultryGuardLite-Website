@@ -15,10 +15,11 @@ import { batchAgeInDays } from '@/types/models';
 
 interface BatchCardProps {
   batch: Batch;
+  remainingBirds: number;
   onEdit: (batch: Batch) => void;
 }
 
-export function BatchCard({ batch, onEdit }: BatchCardProps) {
+export function BatchCard({ batch, remainingBirds, onEdit }: BatchCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const deleteMutation = useDeleteBatch();
@@ -81,7 +82,7 @@ export function BatchCard({ batch, onEdit }: BatchCardProps) {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="w-3.5 h-3.5 shrink-0 inline-flex items-center justify-center font-bold text-[10px]">#</span>
-            <span>Birds: {batch.currentBirds.toLocaleString()} / {batch.totalBirds.toLocaleString()}</span>
+            <span>Birds: {remainingBirds.toLocaleString()} / {batch.totalBirds.toLocaleString()}</span>
           </div>
         </div>
 

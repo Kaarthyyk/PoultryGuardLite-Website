@@ -85,7 +85,7 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
     }
     try {
       // Get scans for that week (simple approach: scans created in the 7 days prior to entryDate)
-      // eslint-disable-next-line react-hooks/rules-of-hooks
+
       const entryTime = entry.entryDate?.getTime() || new Date().getTime();
       const weekBefore = entryTime - 7 * 24 * 60 * 60 * 1000;
       

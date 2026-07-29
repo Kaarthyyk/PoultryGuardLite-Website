@@ -3,6 +3,7 @@ import { Branding } from '@/config/branding';
 import autoTable from 'jspdf-autotable';
 import { formatDate } from '@/lib/utils';
 import type { Farm, Batch, WeeklyEntry, ScanHistory, Sale } from '@/types/models';
+import { calculateTotalRevenue, calculateTotalBirdsSold } from '@/lib/calculations';
 
 /**
  * Creates a standard jsPDF document with the PoultryGuardLite branding.
@@ -200,8 +201,8 @@ export async function generateSalesReportPdf(
   doc.line(14, startY + 16, pageWidth - 14, startY + 16);
 
   // SUMMARY CARDS
-  const totalRevenue = sales.reduce((acc, sale) => acc + sale.revenue, 0);
-  const totalBirdsSold = sales.reduce((acc, sale) => acc + sale.birdsSold, 0);
+  const totalRevenue = calculateTotalRevenue(sales);
+  const totalBirdsSold = calculateTotalBirdsSold(sales);
   const totalWeight = sales.reduce((acc, sale) => acc + (sale.totalWeight || 0), 0);
   const averagePricePerKg = totalWeight > 0 ? totalRevenue / totalWeight : 0;
   const totalProfit = sales.reduce((acc, sale) => acc + (sale.estimatedProfit || 0), 0);

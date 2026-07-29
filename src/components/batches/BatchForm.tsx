@@ -20,7 +20,6 @@ const batchSchema = z.object({
   birdType: z.string().min(1, 'Bird type is required'),
   breed: z.string().min(1, 'Breed is required'),
   totalBirds: z.coerce.number().min(1, 'Total birds must be at least 1').max(10_000_000),
-  currentBirds: z.coerce.number().min(0, 'Current birds cannot be negative').max(10_000_000),
   supplier: z.string().min(1, 'Supplier is required').max(100),
   arrivalDate: z.string().min(1, 'Arrival date is required'),
   expectedMarketDate: z.string().min(1, 'Expected market date is required'),
@@ -52,7 +51,6 @@ export function BatchForm({ farmId, defaultValues, onSubmit, onCancel, loading }
           birdType: defaultValues.birdType,
           breed: defaultValues.breed,
           totalBirds: defaultValues.totalBirds,
-          currentBirds: defaultValues.currentBirds,
           supplier: defaultValues.supplier,
           arrivalDate: defaultValues.arrivalDate?.toISOString().split('T')[0] ?? '',
           expectedMarketDate: defaultValues.expectedMarketDate?.toISOString().split('T')[0] ?? '',
@@ -61,7 +59,6 @@ export function BatchForm({ farmId, defaultValues, onSubmit, onCancel, loading }
         }
       : { 
           totalBirds: 0, 
-          currentBirds: 0, 
           status: 'Active', 
           notes: '',
           arrivalDate: new Date().toISOString().split('T')[0],
@@ -76,7 +73,6 @@ export function BatchForm({ farmId, defaultValues, onSubmit, onCancel, loading }
         birdType: defaultValues.birdType,
         breed: defaultValues.breed,
         totalBirds: defaultValues.totalBirds,
-        currentBirds: defaultValues.currentBirds,
         supplier: defaultValues.supplier,
         arrivalDate: defaultValues.arrivalDate?.toISOString().split('T')[0] ?? '',
         expectedMarketDate: defaultValues.expectedMarketDate?.toISOString().split('T')[0] ?? '',
@@ -93,7 +89,7 @@ export function BatchForm({ farmId, defaultValues, onSubmit, onCancel, loading }
       birdType: values.birdType,
       breed: values.breed,
       totalBirds: values.totalBirds,
-      currentBirds: values.currentBirds,
+      currentBirds: values.totalBirds, // Hardcoded, value ignored dynamically
       supplier: values.supplier,
       arrivalDate: new Date(values.arrivalDate),
       expectedMarketDate: new Date(values.expectedMarketDate),
@@ -143,13 +139,6 @@ export function BatchForm({ farmId, defaultValues, onSubmit, onCancel, loading }
           min={1}
           error={errors.totalBirds?.message}
           {...register('totalBirds')}
-        />
-        <Input
-          label="Current Birds"
-          type="number"
-          min={0}
-          error={errors.currentBirds?.message}
-          {...register('currentBirds')}
         />
         <Input
           label="Arrival Date"

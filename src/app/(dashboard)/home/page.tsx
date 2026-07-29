@@ -11,6 +11,14 @@ import type { Batch, WeeklyEntry, Sale } from '@/types/models';
 import { DashboardCharts } from '@/components/home/DashboardCharts';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { ErrorState } from '@/components/ui/States';
+import {
+  calculateTotalMortality,
+  calculateTotalBirdsSold,
+  calculateRemainingBirds,
+  calculateMortalityPercent,
+  calculateSurvivalRate,
+  calculateTotalRevenue
+} from '@/lib/calculations';
 
 export default function HomePage() {
   const { data: farms, isLoading: loadingFarms, error: errorFarms } = useFarms();
@@ -63,18 +71,17 @@ export default function HomePage() {
     };
   }, [farms]);
 
-  // Fetch entries for all active batches
+  // Fetch entries for all batches
   useEffect(() => {
     let isMounted = true;
     const fetchEntries = async () => {
-      const activeBatches = batches.filter(b => b.status === 'Active');
-      if (activeBatches.length === 0) {
+      if (batches.length === 0) {
         if (isMounted) setEntries([]);
         return;
       }
       setLoadingEntries(true);
       try {
-        const entryPromises = activeBatches.map(b => EntryRepository.getEntries(b.farmId, b.id));
+        const entryPromises = batches.map(b => EntryRepository.getEntries(b.farmId, b.id));
         const results = await Promise.all(entryPromises);
         if (isMounted) {
           setEntries(results.flat());
@@ -93,41 +100,29 @@ export default function HomePage() {
     };
   }, [batches]);
 
-  const activeBatchesCount = useMemo(() => {
-    return batches.filter(b => b.status === 'Active').length;
-  }, [batches]);
-  
-  const totalBirds = useMemo(() => {
-    return batches.filter(b => b.status === 'Active').reduce((sum, b) => sum + b.currentBirds, 0);
-  }, [batches]);
+  const { initialBirds, remainingBirds, mortalityPercent, survivalRate } = useMemo(() => {
+    const initialBirds = batches.reduce((sum, b) => sum + b.totalBirds, 0);
+    const mortalityCount = calculateTotalMortality(entries);
+    const birdsSold = calculateTotalBirdsSold(sales);
+    const remainingBirds = calculateRemainingBirds(initialBirds, mortalityCount, birdsSold);
+    
+    const mortalityPercent = calculateMortalityPercent(initialBirds, mortalityCount);
+    const survivalRate = calculateSurvivalRate(initialBirds, remainingBirds);
 
-  const mortalityPercent = useMemo(() => {
-    const activeBatches = batches.filter(b => b.status === 'Active');
-    const initialBirds = activeBatches.reduce((sum, b) => sum + b.totalBirds, 0);
-    const currentBirds = activeBatches.reduce((sum, b) => sum + b.currentBirds, 0);
-    if (initialBirds === 0) return 0;
-    return (((initialBirds - currentBirds) / initialBirds) * 100).toFixed(1);
-  }, [batches]);
+    return { initialBirds, remainingBirds, mortalityPercent, survivalRate };
+  }, [batches, entries, sales]);
 
   const totalFeed = useMemo(() => {
     return entries.reduce((sum, e) => sum + e.feedConsumedKg, 0);
   }, [entries]);
   
   const totalRevenue = useMemo(() => {
-    return sales.reduce((sum, s) => sum + s.revenue, 0);
+    return calculateTotalRevenue(sales);
   }, [sales]);
 
   const totalProfit = useMemo(() => {
-    return sales.reduce((sum, s) => sum + s.estimatedProfit, 0);
+    return sales.reduce((sum, s) => sum + (s.estimatedProfit || 0), 0);
   }, [sales]);
-
-  const survivalRate = useMemo(() => {
-    const activeBatches = batches.filter(b => b.status === 'Active');
-    const initialBirds = activeBatches.reduce((sum, b) => sum + b.totalBirds, 0);
-    const currentBirds = activeBatches.reduce((sum, b) => sum + b.currentBirds, 0);
-    if (initialBirds === 0) return '0.0';
-    return ((currentBirds / initialBirds) * 100).toFixed(1);
-  }, [batches]);
 
   if (loadingFarms || loadingScans || loadingBatches || loadingEntries || loadingSales) {
     return <LoadingScreen />;
@@ -139,8 +134,8 @@ export default function HomePage() {
 
   const stats = [
     { label: 'Total Farms', value: farms?.length ?? 0, icon: Building2 },
-    { label: 'Initial Birds', value: batches.filter(b => b.status === 'Active').reduce((s, b) => s + b.totalBirds, 0).toLocaleString(), icon: Users },
-    { label: 'Remaining Birds', value: totalBirds.toLocaleString(), icon: Users },
+    { label: 'Initial Birds', value: initialBirds.toLocaleString(), icon: Users },
+    { label: 'Remaining Birds', value: remainingBirds.toLocaleString(), icon: Users },
     { label: 'Survival Rate', value: `${survivalRate}%`, icon: Activity },
     { label: 'Mortality %', value: `${mortalityPercent}%`, icon: Activity },
     { label: 'Feed (kg)', value: totalFeed.toLocaleString(), icon: FileText },

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { useState } from 'react';
-import { User, Mail, LogOut, Loader2, Building, Phone, MapPin, Info } from 'lucide-react';
+import { User, Mail, LogOut, Loader2, Building, Phone, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';

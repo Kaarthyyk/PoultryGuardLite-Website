@@ -40,6 +40,22 @@ export function DirectoryClient() {
     }
   };
 
+  const handleEmailClick = (e: React.MouseEvent, email?: string) => {
+    e.preventDefault();
+    if (!email || email.trim() === '') {
+      alert('Email address not available.');
+      return;
+    }
+    let cleanEmail = email.trim();
+    if (cleanEmail.toLowerCase().startsWith('mailto:')) {
+      cleanEmail = cleanEmail.substring(7);
+    }
+    if (cleanEmail.toLowerCase().startsWith('https://')) {
+      cleanEmail = cleanEmail.substring(8);
+    }
+    window.location.href = `mailto:${cleanEmail}`;
+  };
+
   const handleFormSubmit = async (data: VeterinarianInput) => {
     try {
       if (editingVet) {
@@ -153,10 +169,10 @@ export function DirectoryClient() {
                   <MessageCircle className="w-5 h-5" />
                   <span className="text-[10px] font-medium">Chat</span>
                 </a>
-                <a href={`mailto:${vet.email}`} className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-accent/50 transition-colors text-blue-500" title="Email">
+                <button onClick={(e) => handleEmailClick(e, vet.email)} className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-accent/50 transition-colors text-blue-500" title="Email">
                   <Mail className="w-5 h-5" />
                   <span className="text-[10px] font-medium">Email</span>
-                </a>
+                </button>
                 <a href={`https://maps.google.com/?q=${encodeURIComponent(vet.address)}`} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-accent/50 transition-colors text-orange-500" title="Map">
                   <MapPin className="w-5 h-5" />
                   <span className="text-[10px] font-medium">Map</span>

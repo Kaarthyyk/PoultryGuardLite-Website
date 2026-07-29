@@ -1,11 +1,15 @@
 'use client';
 
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/Button';
 import { useFarms } from '@/hooks/useFarms';
 import { useBatches } from '@/hooks/useBatches';
+import { useEntries } from '@/hooks/useEntries';
+import { useSales } from '@/hooks/useSales';
+import { calculateTotalMortality, calculateTotalBirdsSold, calculateRemainingBirds } from '@/lib/calculations';
+import { useToast } from '@/components/ui/Toast';
 import type { SaleInput, Sale } from '@/types/models';
 import { useState } from 'react';
 
@@ -38,6 +42,7 @@ export function SaleForm({
   const { data: farms } = useFarms();
   const [selectedFarm, setSelectedFarm] = useState<string>(defaultValues?.farmId || (farms?.[0]?.id ?? ''));
   const { data: batches } = useBatches(selectedFarm);
+  const { toast } = useToast();
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -55,7 +60,24 @@ export function SaleForm({
     },
   });
 
+  const watchBatchId = useWatch({ control, name: 'batchId' });
+  const { data: entries } = useEntries(selectedFarm, watchBatchId);
+  const { data: sales } = useSales(selectedFarm, watchBatchId);
+
   const submitHandler = async (data: FormValues) => {
+    const selectedBatch = batches?.find(b => b.id === data.batchId);
+    if (selectedBatch) {
+      const mortality = calculateTotalMortality(entries || []);
+      const otherSales = (sales || []).filter(s => s.id !== defaultValues?.id);
+      const prevBirdsSold = calculateTotalBirdsSold(otherSales);
+      const remainingBirds = calculateRemainingBirds(selectedBatch.totalBirds, mortality, prevBirdsSold);
+      
+      if (data.birdsSold > remainingBirds) {
+        toast(`Birds sold cannot exceed the remaining birds available in this batch (${remainingBirds}).`, 'error');
+        return;
+      }
+    }
+
     await onSubmit({
       ...data,
       saleDate: new Date(data.saleDate),

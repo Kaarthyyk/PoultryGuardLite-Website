@@ -5,7 +5,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   serverTimestamp,
   updateDoc
 } from 'firebase/firestore';
@@ -44,14 +43,21 @@ function toSale(id: string, data: Record<string, any>): Sale {
 }
 
 export const SaleRepository = {
-  async getSales(farmId: string): Promise<Sale[]> {
+  async getSales(farmId: string, batchId?: string): Promise<Sale[]> {
     const uid = requireUid();
     try {
-      const q = query(
-        salesCol(),
-        where('ownerId', '==', uid),
-        where('farmId', '==', farmId)
-      );
+      const q = batchId
+        ? query(
+            salesCol(),
+            where('ownerId', '==', uid),
+            where('farmId', '==', farmId),
+            where('batchId', '==', batchId)
+          )
+        : query(
+            salesCol(),
+            where('ownerId', '==', uid),
+            where('farmId', '==', farmId)
+          );
       const snap = await getDocs(q);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sales = snap.docs.map((d) => toSale(d.id, d.data() as any));
@@ -95,6 +101,7 @@ export const SaleRepository = {
     const revenue = totalWeight * sale.pricePerKg;
     const estimatedProfit = revenue * 0.2;
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, createdAt, ownerId, ...data } = sale;
     
     await updateDoc(docRef, {

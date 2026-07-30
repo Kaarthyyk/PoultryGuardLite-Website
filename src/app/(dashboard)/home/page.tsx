@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { Building2, Users, FileText, Activity, Droplet } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 import { useQueries } from '@tanstack/react-query';
 import { useFarms } from '@/hooks/useFarms';
 import { useScanHistory } from '@/hooks/useScanHistory';
@@ -136,8 +137,8 @@ export default function HomePage() {
     { label: 'Mortality %', value: `${mortalityPercent}%`, icon: Activity },
     { label: 'Feed (kg)', value: totalFeed.toLocaleString(), icon: FileText },
     { label: 'Water (L)', value: totalWater.toLocaleString(), icon: Droplet },
-    { label: 'Revenue ($)', value: totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), icon: Activity },
-    { label: 'Profit ($)', value: totalProfit.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), icon: Activity },
+    { label: 'Revenue (₹)', value: formatCurrency(totalRevenue), icon: Activity },
+    { label: 'Profit (₹)', value: formatCurrency(totalProfit), icon: Activity },
   ];
 
   return (

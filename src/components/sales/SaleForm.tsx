@@ -152,7 +152,7 @@ export function SaleForm({
         </div>
         
         <div className="space-y-2">
-          <label className="text-sm font-medium">Price per kg</label>
+          <label className="text-sm font-medium">Price per kg (₹)</label>
           <input
             type="number"
             step="0.01"

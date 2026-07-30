@@ -11,6 +11,7 @@ import { ErrorState } from '@/components/ui/States';
 import { Button } from '@/components/ui/Button';
 import type { Sale, SaleInput } from '@/types/models';
 import { useToast } from '@/components/ui/Toast';
+import { formatCurrency } from '@/lib/currency';
 import { Edit2, Trash2, DollarSign, Activity, TrendingUp, Users, Download, Printer } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { generateSalesReportPdf } from '@/lib/pdf';
@@ -107,7 +108,7 @@ export function SalesClient() {
   const totalBirdsSold = calculateTotalBirdsSold(sales || []);
   const totalProfit = sales?.reduce((acc, sale) => acc + (sale.estimatedProfit || 0), 0) || 0;
   const totalWeight = sales?.reduce((acc, sale) => acc + (sale.totalWeight || 0), 0) || 0;
-  const averageSellingPrice = sales && totalWeight > 0 ? (totalRevenue / totalWeight).toFixed(2) : '0.00';
+  const averageSellingPrice = sales && totalWeight > 0 ? (totalRevenue / totalWeight) : 0;
 
   return (
     <div className="space-y-6">
@@ -149,7 +150,7 @@ export function SalesClient() {
             <DollarSign className="w-5 h-5 text-emerald-500" />
             <span className="font-medium text-sm">Total Revenue</span>
           </div>
-          <p className="text-2xl font-bold">${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
         </div>
         <div className="p-4 rounded-2xl glass border border-border">
           <div className="flex items-center gap-3 text-muted-foreground mb-2">
@@ -163,14 +164,14 @@ export function SalesClient() {
             <Activity className="w-5 h-5 text-orange-500" />
             <span className="font-medium text-sm">Avg Price/Kg</span>
           </div>
-          <p className="text-2xl font-bold">${averageSellingPrice}</p>
+          <p className="text-2xl font-bold">{formatCurrency(averageSellingPrice)}</p>
         </div>
         <div className="p-4 rounded-2xl glass border border-border">
           <div className="flex items-center gap-3 text-muted-foreground mb-2">
             <TrendingUp className="w-5 h-5 text-[#F4A900]" />
             <span className="font-medium text-sm">Est. Profit</span>
           </div>
-          <p className="text-2xl font-bold">${totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold">{formatCurrency(totalProfit)}</p>
         </div>
       </div>
 
@@ -209,11 +210,11 @@ export function SalesClient() {
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-1">
                     <span className="text-muted-foreground">Price/Kg</span>
-                    <span className="font-semibold">${sale.pricePerKg}</span>
+                    <span className="font-semibold">{formatCurrency(sale.pricePerKg)}</span>
                   </div>
                   <div className="flex justify-between border-b border-border/50 pb-1">
                     <span className="text-muted-foreground">Total Revenue</span>
-                    <span className="font-semibold text-emerald-500">${sale.revenue.toFixed(2)}</span>
+                    <span className="font-semibold text-emerald-500">{formatCurrency(sale.revenue)}</span>
                   </div>
                 </div>
               </div>

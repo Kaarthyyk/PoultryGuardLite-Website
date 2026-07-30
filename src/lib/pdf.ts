@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { Branding } from '@/config/branding';
 import autoTable from 'jspdf-autotable';
 import { formatDate } from '@/lib/utils';
+import { formatCurrency } from '@/lib/currency';
 import type { Farm, Batch, WeeklyEntry, ScanHistory, Sale, UserProfile } from '@/types/models';
 import { calculateTotalRevenue, calculateTotalBirdsSold } from '@/lib/calculations';
 
@@ -255,10 +256,10 @@ export async function generateSalesReportPdf(
   doc.setTextColor(50);
   doc.setFont('helvetica', 'normal');
   const cw = (pageWidth - 28) / 5; // column width
-  doc.text(`Total Revenue\n$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, currentY + 6);
+  doc.text(`Total Revenue\n${formatCurrency(totalRevenue)}`, 14, currentY + 6);
   doc.text(`Birds Sold\n${totalBirdsSold.toLocaleString()}`, 14 + cw, currentY + 6);
-  doc.text(`Avg Price/Kg\n$${averagePricePerKg.toFixed(2)}`, 14 + cw * 2, currentY + 6);
-  doc.text(`Est. Profit\n$${totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14 + cw * 3, currentY + 6);
+  doc.text(`Avg Price/Kg\n${formatCurrency(averagePricePerKg)}`, 14 + cw * 2, currentY + 6);
+  doc.text(`Est. Profit\n${formatCurrency(totalProfit)}`, 14 + cw * 3, currentY + 6);
   doc.text(`Number of Sales\n${numberOfSales}`, 14 + cw * 4, currentY + 6);
 
   currentY += 18;
@@ -281,8 +282,8 @@ export async function generateSalesReportPdf(
       s.buyerName,
       s.birdsSold.toString(),
       `${s.averageWeight} kg`,
-      `$${s.pricePerKg.toFixed(2)}`,
-      `$${s.revenue.toFixed(2)}`,
+      `${formatCurrency(s.pricePerKg)}`,
+      `${formatCurrency(s.revenue)}`,
       'Completed',
       s.notes || '-'
     ]);
@@ -328,14 +329,14 @@ export async function generateSalesReportPdf(
     const mostSoldBatchId = Object.keys(batchSalesCount).reduce((a, b) => batchSalesCount[a] > batchSalesCount[b] ? a : b, '');
     const mostSoldBatchName = batchMap.get(mostSoldBatchId) || 'Unknown';
 
-    doc.text(`Highest Sale: $${highestSale.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, currentY + 8);
-    doc.text(`Lowest Sale: $${lowestSale.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, currentY + 14);
+    doc.text(`Highest Sale: ${formatCurrency(highestSale)}`, 14, currentY + 8);
+    doc.text(`Lowest Sale: ${formatCurrency(lowestSale)}`, 14, currentY + 14);
     
-    doc.text(`Avg Revenue / Sale: $${avgRevPerSale.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14 + cw * 1.5, currentY + 8);
+    doc.text(`Avg Revenue / Sale: ${formatCurrency(avgRevPerSale)}`, 14 + cw * 1.5, currentY + 8);
     doc.text(`Avg Birds Sold: ${avgBirdsSold}`, 14 + cw * 1.5, currentY + 14);
     
     doc.text(`Most Sold Batch: ${mostSoldBatchName}`, 14 + cw * 3, currentY + 8);
-    doc.text(`Total Sales Value: $${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14 + cw * 3, currentY + 14);
+    doc.text(`Total Sales Value: ${formatCurrency(totalRevenue)}`, 14 + cw * 3, currentY + 14);
 
   } else {
     doc.setFontSize(12);

@@ -5,6 +5,11 @@ export function calculateTotalMortality(entries: WeeklyEntry[]): number {
   return entries.reduce((sum, entry) => sum + (entry.mortalityCount || 0), 0);
 }
 
+export function calculateTotalWaterConsumption(entries: WeeklyEntry[]): number {
+  if (!entries || entries.length === 0) return 0;
+  return entries.reduce((sum, entry) => sum + (entry.waterConsumedLitres || 0), 0);
+}
+
 export function calculateTotalBirdsSold(sales: Sale[]): number {
   if (!sales || sales.length === 0) return 0;
   return sales.reduce((sum, sale) => sum + (sale.birdsSold || 0), 0);

@@ -2,50 +2,89 @@ import jsPDF from 'jspdf';
 import { Branding } from '@/config/branding';
 import autoTable from 'jspdf-autotable';
 import { formatDate } from '@/lib/utils';
-import type { Farm, Batch, WeeklyEntry, ScanHistory, Sale } from '@/types/models';
+import type { Farm, Batch, WeeklyEntry, ScanHistory, Sale, UserProfile } from '@/types/models';
 import { calculateTotalRevenue, calculateTotalBirdsSold } from '@/lib/calculations';
 
 /**
- * Creates a standard jsPDF document with the PoultryGuardLite branding.
+ * Creates a standard jsPDF document with the company branding if available, or PoultryGuardLite branding as fallback.
  * @param title The title of the report.
+ * @param userProfile The user profile containing company information.
  * @param orientation 'portrait' or 'landscape'
  * @returns A jsPDF instance and the next available Y coordinate for content.
  */
-export async function createBrandedPDF(title: string, orientation: 'portrait' | 'landscape' = 'portrait', version: string = '1.1') {
+export async function createBrandedPDF(
+  title: string, 
+  userProfile: UserProfile | null,
+  orientation: 'portrait' | 'landscape' = 'portrait', 
+  version: string = '1.2'
+) {
   const doc = new jsPDF({ orientation });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   
+  const logoUrl = userProfile?.companyLogoUrl || Branding.reports.headerLogo;
   let logoData: string | null = null;
-  // Try to load the report header logo
+  
   try {
-    logoData = await fetchImageAsBase64(Branding.reports.headerLogo);
-    // Add logo (approx 40x10 mm)
-    doc.addImage(logoData, 'PNG', 14, 10, 40, 10);
+    if (logoUrl) {
+      logoData = await fetchImageAsBase64(logoUrl);
+      doc.addImage(logoData, 'PNG', 14, 10, 40, 40, '', 'FAST'); // assuming square logo, 40x40
+    }
   } catch {
-    // Fallback if image fails to load
-    doc.setFontSize(16);
-    doc.setTextColor('#F4A900'); // Primary color
-    doc.text(Branding.appName, 14, 16);
+    // Silent fallback
   }
 
-  // Tagline / Date
+  // Header Text
+  const startX = logoData ? 60 : 14;
+  let currentHeaderY = 16;
+  
+  doc.setFontSize(16);
+  doc.setTextColor('#F4A900'); 
+  doc.text(userProfile?.companyName || Branding.appName, startX, currentHeaderY);
+  
   doc.setFontSize(10);
   doc.setTextColor(100);
-  doc.text(Branding.tagline, 14, 25);
   
+  if (userProfile?.address) {
+    currentHeaderY += 6;
+    doc.text(userProfile.address, startX, currentHeaderY);
+  } else {
+    currentHeaderY += 6;
+    doc.text(Branding.tagline, startX, currentHeaderY);
+  }
+
+  if (userProfile?.phoneNumber || userProfile?.companyEmail) {
+    currentHeaderY += 6;
+    const contactParts = [];
+    if (userProfile.phoneNumber) contactParts.push(`Tel: ${userProfile.phoneNumber}`);
+    if (userProfile.companyEmail) contactParts.push(`Email: ${userProfile.companyEmail}`);
+    doc.text(contactParts.join(' | '), startX, currentHeaderY);
+  }
+
+  if (userProfile?.website) {
+    currentHeaderY += 6;
+    doc.text(`Web: ${userProfile.website}`, startX, currentHeaderY);
+  }
+
+  if (userProfile?.gstNumber) {
+    currentHeaderY += 6;
+    doc.text(`GST/VAT: ${userProfile.gstNumber}`, startX, currentHeaderY);
+  }
+
+  // Tagline / Date on the right
   const now = new Date();
   doc.text(`Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, pageWidth - 14, 20, { align: 'right' });
   doc.text(`Report Version: ${version}`, pageWidth - 14, 25, { align: 'right' });
 
   // Divider
+  const headerBottomY = Math.max(52, currentHeaderY + 8);
   doc.setDrawColor(200);
-  doc.line(14, 28, pageWidth - 14, 28);
+  doc.line(14, headerBottomY, pageWidth - 14, headerBottomY);
 
   // Title
   doc.setFontSize(18);
   doc.setTextColor(20);
-  doc.text(title, 14, 38);
+  doc.text(title, 14, headerBottomY + 10);
 
   // Footer function to add on every page
   const addFooter = () => {
@@ -56,17 +95,13 @@ export async function createBrandedPDF(title: string, orientation: 'portrait' | 
       doc.setDrawColor(200);
       doc.line(14, pageHeight - 16, pageWidth - 14, pageHeight - 16);
       
-      if (logoData) {
-        doc.addImage(logoData, 'PNG', 14, pageHeight - 12, 24, 6);
-      } else {
-        doc.setFontSize(10);
-        doc.setTextColor('#F4A900');
-        doc.text(Branding.appName, 14, pageHeight - 8);
-      }
+      doc.setFontSize(10);
+      doc.setTextColor('#F4A900');
+      doc.text(userProfile?.companyName || Branding.appName, 14, pageHeight - 8);
       
       doc.setFontSize(8);
       doc.setTextColor(120);
-      doc.text(`${Branding.tagline} | Version ${version}`, 42, pageHeight - 8);
+      doc.text(`Powered by PoultryGuardLite | Version ${version}`, 60, pageHeight - 8);
       doc.text(Branding.copyright, 14, pageHeight - 4);
 
       doc.text(`Generated On: ${now.toLocaleDateString()}`, pageWidth - 14, pageHeight - 10, { align: 'right' });
@@ -74,7 +109,7 @@ export async function createBrandedPDF(title: string, orientation: 'portrait' | 
     }
   };
 
-  return { doc, startY: 45, addFooter, pageWidth, pageHeight };
+  return { doc, startY: headerBottomY + 18, addFooter, pageWidth, pageHeight };
 }
 
 /** Helper to fetch image and convert to base64 for jsPDF */
@@ -93,9 +128,10 @@ export async function generateWeeklyReportPdf(
   farm: Farm,
   batch: Batch,
   entries: WeeklyEntry[],
-  scans: ScanHistory[]
+  scans: ScanHistory[],
+  userProfile: UserProfile | null
 ) {
-  const { doc, startY, addFooter } = await createBrandedPDF(`Weekly Report: ${batch.batchName}`, 'portrait');
+  const { doc, startY, addFooter } = await createBrandedPDF(`Weekly Report: ${batch.batchName}`, userProfile, 'portrait');
 
   doc.setFontSize(12);
   doc.setTextColor(50);
@@ -177,9 +213,10 @@ export async function generateWeeklyReportPdf(
 export async function generateSalesReportPdf(
   farm: Farm,
   sales: Sale[],
-  batches: Batch[]
+  batches: Batch[],
+  userProfile: UserProfile | null
 ) {
-  const { doc, startY, addFooter, pageWidth, pageHeight } = await createBrandedPDF(`SALES REPORT`, 'landscape', '1.1');
+  const { doc, startY, addFooter, pageWidth, pageHeight } = await createBrandedPDF(`SALES REPORT`, userProfile, 'landscape', '1.2');
 
   // FARM INFORMATION
   doc.setFontSize(12);

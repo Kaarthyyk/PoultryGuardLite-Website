@@ -18,8 +18,10 @@ import { useScanHistory } from '@/hooks/useScanHistory';
 import { generateWeeklyReportPdf } from '@/lib/pdf';
 import { Download, Printer } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: string }) {
+  const { userProfile } = useAuth();
   const router = useRouter();
   const { data: entries, isLoading, error } = useEntries(farmId, batchId);
   const addEntry = useAddEntry();
@@ -95,7 +97,7 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
         return scan.batchId === batchId && scanTime >= weekBefore && scanTime <= entryTime;
       });
 
-      const doc = await generateWeeklyReportPdf(farm, batch, [entry], scansForWeek);
+      const doc = await generateWeeklyReportPdf(farm, batch, [entry], scansForWeek, userProfile);
       
       if (action === 'download') {
         doc.save(`Weekly_Report_${batch.batchName}_${formatDate(new Date())}.pdf`);

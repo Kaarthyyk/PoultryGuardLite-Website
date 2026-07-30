@@ -15,8 +15,10 @@ import { Edit2, Trash2, DollarSign, Activity, TrendingUp, Users, Download, Print
 import { formatDate } from '@/lib/utils';
 import { generateSalesReportPdf } from '@/lib/pdf';
 import { calculateTotalRevenue, calculateTotalBirdsSold } from '@/lib/calculations';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function SalesClient() {
+  const { userProfile } = useAuth();
   const { data: farms, isLoading: loadingFarms } = useFarms();
   const [selectedFarmId, setSelectedFarmId] = useState<string | null>(null);
   const activeFarmId = selectedFarmId || farms?.[0]?.id || '';
@@ -41,7 +43,7 @@ export function SalesClient() {
     const activeFarm = farms?.find((f) => f.id === activeFarmId);
     if (!activeFarm) return;
     try {
-      const doc = await generateSalesReportPdf(activeFarm, sales || [], batches || []);
+      const doc = await generateSalesReportPdf(activeFarm, sales || [], batches || [], userProfile);
       doc.save(`Sales_Report_${activeFarm.name.replace(/\s+/g, '_')}.pdf`);
       toast('Report downloaded successfully', 'success');
     } catch (err) {
@@ -54,7 +56,7 @@ export function SalesClient() {
     const activeFarm = farms?.find((f) => f.id === activeFarmId);
     if (!activeFarm) return;
     try {
-      const doc = await generateSalesReportPdf(activeFarm, sales || [], batches || []);
+      const doc = await generateSalesReportPdf(activeFarm, sales || [], batches || [], userProfile);
       doc.autoPrint();
       window.open(doc.output('bloburl'), '_blank');
     } catch (err) {

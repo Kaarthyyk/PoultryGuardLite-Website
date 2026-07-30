@@ -14,8 +14,10 @@ import { Download } from 'lucide-react';
 import { createBrandedPDF } from '@/lib/pdf';
 import autoTable from 'jspdf-autotable';
 import { formatDate } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function FarmsClient() {
+  const { userProfile } = useAuth();
   const { data: farms, isLoading, error } = useFarms();
   const addFarm = useAddFarm();
   const updateFarm = useUpdateFarm();
@@ -58,7 +60,7 @@ export function FarmsClient() {
       return;
     }
     
-    const { doc, startY, addFooter } = await createBrandedPDF('PoultryGuardLite Farm Summary Report');
+    const { doc, startY, addFooter } = await createBrandedPDF('PoultryGuardLite Farm Summary Report', userProfile);
     
     const tableData = farms.map(f => [
       f.name,

@@ -12,9 +12,11 @@ import autoTable from 'jspdf-autotable';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ConfirmModal } from '@/components/ui/Modal';
+import { useAuth } from '@/contexts/AuthContext';
 import type { ScanHistory } from '@/types/models';
 
 export function HistoryClient() {
+  const { userProfile } = useAuth();
   const { data: scans, isLoading, error } = useScanHistory();
   const deleteMutation = useDeleteScanHistory();
   const { toast } = useToast();
@@ -44,7 +46,7 @@ export function HistoryClient() {
       return;
     }
     
-    const { doc, startY, addFooter } = await createBrandedPDF('PoultryGuardLite AI Scan History');
+    const { doc, startY, addFooter } = await createBrandedPDF('PoultryGuardLite AI Scan History', userProfile);
     
     const tableData = scans.map(scan => [
       scan.createdAt ? formatDate(scan.createdAt) : 'Unknown',

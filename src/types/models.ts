@@ -25,6 +25,8 @@ export interface Farm {
   sheds: number;
   capacity: number;
   notes: string;
+  /** e.g. "active", "completed", "closed", "archived" */
+  status?: string;
   ownerId: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -171,6 +173,23 @@ export interface AppUser {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+}
+
+/** Firestore Profile derived from users/{uid} */
+export interface UserProfile {
+  uid: string;
+  displayName: string;
+  email: string;
+  companyName: string;
+  phoneNumber: string;
+  address: string;
+  companyEmail?: string;
+  website?: string;
+  gstNumber?: string;
+  companyLogoUrl?: string;
+  companyLogoPath?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 // ── Veterinarian ──────────────────────────────────────────────────────────────

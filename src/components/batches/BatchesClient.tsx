@@ -19,8 +19,10 @@ import { useRouter } from 'next/navigation';
 import { createBrandedPDF } from '@/lib/pdf';
 import autoTable from 'jspdf-autotable';
 import { formatDate } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function BatchesClient({ farmId }: { farmId: string }) {
+  const { userProfile } = useAuth();
   const router = useRouter();
   const { data: batches, isLoading, error } = useBatches(farmId);
   const addBatch = useAddBatch();
@@ -102,7 +104,7 @@ export function BatchesClient({ farmId }: { farmId: string }) {
       return;
     }
     
-    const { doc, startY, addFooter } = await createBrandedPDF('PoultryGuardLite Batch Report');
+    const { doc, startY, addFooter } = await createBrandedPDF('PoultryGuardLite Batch Report', userProfile);
     
     const tableData = batches.map(b => {
       const batchEntries = entries.filter(e => e.batchId === b.id);

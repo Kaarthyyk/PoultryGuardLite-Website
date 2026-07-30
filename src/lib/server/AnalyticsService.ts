@@ -1,6 +1,6 @@
 import { getAdminDb } from './firebase-admin';
 import { computeBatchAnalytics } from '@/lib/analytics';
-import { batchAgeInDays } from '@/types/models';
+import { calculateBatchAgeDays } from '@/lib/calculations';
 import type { Farm, Batch, WeeklyEntry } from '@/types/models';
 
 export interface FlockContext {
@@ -38,7 +38,7 @@ export class AnalyticsService {
     return {
       farmName: farm.name,
       batchName: batch.batchName,
-      birdAge: batchAgeInDays(batch),
+      birdAge: calculateBatchAgeDays(batch.arrivalDate),
       totalBirds: batch.totalBirds,
       avgWeight: analytics.latestAverageWeightKg,
       mortalityPercent: analytics.mortalityPercent,

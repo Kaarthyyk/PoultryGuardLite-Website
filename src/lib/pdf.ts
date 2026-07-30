@@ -4,7 +4,7 @@ import autoTable from 'jspdf-autotable';
 import { formatDate } from '@/lib/utils';
 import { formatCurrency } from '@/lib/currency';
 import type { Farm, Batch, WeeklyEntry, ScanHistory, Sale, UserProfile } from '@/types/models';
-import { calculateTotalRevenue, calculateTotalBirdsSold } from '@/lib/calculations';
+import { calculateTotalRevenue, calculateTotalBirdsSold, calculateProductionWeek } from '@/lib/calculations';
 
 /**
  * Creates a standard jsPDF document with the company branding if available, or PoultryGuardLite branding as fallback.
@@ -148,8 +148,8 @@ export async function generateWeeklyReportPdf(
     doc.setTextColor(20);
     doc.text('Weekly Entries', 14, currentY);
     
-    const tableData = entries.map((e, index) => [
-      `Week ${index + 1}`,
+    const tableData = entries.map((e) => [
+      calculateProductionWeek(batch.arrivalDate, e.entryDate),
       formatDate(e.entryDate || new Date()),
       e.mortalityCount.toString(),
       e.feedConsumedKg.toString(),

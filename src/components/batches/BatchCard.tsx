@@ -11,7 +11,7 @@ import { ConfirmModal } from '@/components/ui/Modal';
 import { useDeleteBatch } from '@/hooks/useBatches';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
-import { batchAgeInDays } from '@/types/models';
+import { calculateBatchAge } from '@/lib/calculations';
 
 interface BatchCardProps {
   batch: Batch;
@@ -74,7 +74,7 @@ export function BatchCard({ batch, remainingBirds, onEdit }: BatchCardProps) {
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Activity className="w-3.5 h-3.5 shrink-0" />
-            <span>Age: {batchAgeInDays(batch)} days</span>
+            <span>Age: {calculateBatchAge(batch.arrivalDate)}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="w-3.5 h-3.5 shrink-0" />

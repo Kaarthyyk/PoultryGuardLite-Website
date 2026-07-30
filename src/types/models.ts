@@ -62,17 +62,6 @@ export interface Batch {
 
 export type BatchInput = Omit<Batch, 'id' | 'ownerId' | 'createdAt' | 'updatedAt'>;
 
-/** Computed age in days from arrivalDate */
-export function batchAgeInDays(batch: Batch): number {
-  if (!batch.arrivalDate) return 0;
-  const arrivalDateExt = batch.arrivalDate as unknown as { toDate?: () => Date };
-  const dateObj = typeof arrivalDateExt.toDate === 'function' 
-    ? arrivalDateExt.toDate() 
-    : new Date(batch.arrivalDate as Date | string | number);
-  return Math.floor(
-    (Date.now() - dateObj.getTime()) / (1000 * 60 * 60 * 24)
-  );
-}
 
 // ── Weekly Entry ──────────────────────────────────────────────────────────────
 

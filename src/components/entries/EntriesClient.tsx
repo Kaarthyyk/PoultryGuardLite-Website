@@ -18,6 +18,7 @@ import { useScanHistory } from '@/hooks/useScanHistory';
 import { generateWeeklyReportPdf } from '@/lib/pdf';
 import { Download, Printer } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { calculateProductionWeek } from '@/lib/calculations';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: string }) {
@@ -142,7 +143,10 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
             <div key={entry.id} className="rounded-2xl border border-border bg-card p-5 glass group transition-all">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="font-bold text-lg">{entry.entryDate ? formatDate(entry.entryDate) : 'Unknown Date'}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg">{calculateProductionWeek(batch?.arrivalDate, entry.entryDate)}</h3>
+                    <span className="text-sm text-muted-foreground">({entry.entryDate ? formatDate(entry.entryDate) : 'Unknown Date'})</span>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">Mortality: <span className="text-red-400 font-semibold">{entry.mortalityCount} birds</span></p>
                 </div>
                 <div className="flex gap-2">

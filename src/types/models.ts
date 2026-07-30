@@ -211,3 +211,26 @@ export interface Veterinarian {
 }
 
 export type VeterinarianInput = Omit<Veterinarian, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>;
+
+// ── Reminder ──────────────────────────────────────────────────────────────────
+
+/**
+ * Firestore path: /reminders/{id}
+ */
+export interface Reminder {
+  id: string;
+  ownerId: string;
+  farmId: string;
+  batchId?: string;
+  title: string;
+  description?: string;
+  category: 'Vaccination' | 'Feed' | 'Medicine' | 'Weekly Entry' | 'AI Scan' | 'Custom';
+  dueDate: Date;
+  status: 'Pending' | 'Completed';
+  notificationEnabled?: boolean;
+  notifyBeforeDays?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export type ReminderInput = Omit<Reminder, 'id' | 'ownerId' | 'createdAt' | 'updatedAt'>;

@@ -41,3 +41,6 @@ export const salesCol = () => collection(db, 'sales');
 
 /** /veterinarians — top-level collection */
 export const veterinariansCol = () => collection(db, 'veterinarians');
+
+/** /reminders — top-level collection */
+export const remindersCol = () => collection(db, 'reminders');

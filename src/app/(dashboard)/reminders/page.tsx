@@ -7,9 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function RemindersPage() {
-  return (
-    <div className="p-4 lg:p-8 w-full max-w-7xl mx-auto">
-      <RemindersClient />
-    </div>
-  );
+  return <RemindersClient />;
 }

@@ -69,8 +69,13 @@ export const ReminderRepository = {
   async addReminder(input: ReminderInput): Promise<void> {
     const uid = requireUid();
     
+    // Clean input to remove undefined values
+    const cleanedInput = Object.fromEntries(
+      Object.entries(input).filter(([, v]) => v !== undefined)
+    );
+
     await addDoc(remindersCol(), {
-      ...input,
+      ...cleanedInput,
       ownerId: uid,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -81,8 +86,13 @@ export const ReminderRepository = {
     requireUid();
     const docRef = doc(db, 'reminders', id);
     
+    // Clean data to remove undefined values
+    const cleanedData = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== undefined)
+    );
+
     await updateDoc(docRef, {
-      ...data,
+      ...cleanedData,
       updatedAt: serverTimestamp(),
     });
   },

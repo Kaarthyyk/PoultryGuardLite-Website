@@ -7,6 +7,7 @@ import { PageLoader, ErrorState, EmptyState } from '@/components/ui/States';
 import { Modal } from '@/components/ui/Modal';
 import { useReminders } from '@/hooks/useReminders';
 import { ReminderForm } from './ReminderForm';
+import { useToast } from '@/components/ui/Toast';
 import type { Reminder, ReminderInput } from '@/types/models';
 
 type FilterType = 'All' | 'Pending' | 'Due Today' | 'Upcoming' | 'Overdue' | 'Completed';
@@ -33,6 +34,7 @@ function getDynamicStatus(reminder: Reminder): FilterType {
 
 export function RemindersClient() {
   const { reminders, isLoading, isError, error, addReminder, updateReminder, deleteReminder, isAdding, isUpdating } = useReminders();
+  const { toast } = useToast();
   
   const [filter, setFilter] = useState<FilterType>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,24 +52,37 @@ export function RemindersClient() {
 
   const handleDeleteClick = async (id: string) => {
     if (confirm('Are you sure you want to delete this reminder?')) {
-      await deleteReminder(id);
+      try {
+        await deleteReminder(id);
+        toast('Reminder deleted', 'success');
+      } catch (err) {
+        toast(err instanceof Error ? err.message : 'Failed to delete reminder', 'error');
+      }
     }
   };
 
   const markCompleted = async (id: string) => {
-    await updateReminder({ id, data: { status: 'Completed' } });
+    try {
+      await updateReminder({ id, data: { status: 'Completed' } });
+      toast('Reminder marked as completed', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to update reminder', 'error');
+    }
   };
 
   const handleFormSubmit = async (data: ReminderInput) => {
     try {
       if (editingReminder) {
         await updateReminder({ id: editingReminder.id, data });
+        toast('Reminder updated successfully', 'success');
       } else {
         await addReminder(data);
+        toast('Reminder created successfully', 'success');
       }
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to save reminder:', err);
+      toast(err instanceof Error ? err.message : 'Failed to save reminder', 'error');
     }
   };
 

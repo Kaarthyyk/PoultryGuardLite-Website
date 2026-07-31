@@ -55,6 +55,7 @@ function toFarm(id: string, data: Record<string, any>): Farm {
     ownerId: data.ownerId ?? '',
     createdAt: data.createdAt?.toDate(),
     updatedAt: data.updatedAt?.toDate(),
+    status: data.status ?? 'Active',
   };
 }
 

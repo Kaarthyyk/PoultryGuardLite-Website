@@ -91,7 +91,7 @@ export default function HomePage() {
   }, [entryQueries]);
 
   // 5. Shared Calculations
-  const { initialBirds, remainingBirds, mortalityPercent, survivalRate } = useMemo(() => {
+  const { initialBirds, remainingBirds, mortalityPercent, survivalRate, salesOfActiveBatches } = useMemo(() => {
     const initialBirds = activeBatches.reduce((sum, b) => sum + (b.totalBirds || 0), 0);
     const mortalityCount = calculateTotalMortality(entries);
     
@@ -103,7 +103,7 @@ export default function HomePage() {
     const mortalityPercent = calculateMortalityPercent(initialBirds, mortalityCount);
     const survivalRate = calculateSurvivalRate(initialBirds, remainingBirds);
 
-    return { initialBirds, remainingBirds, mortalityPercent, survivalRate };
+    return { initialBirds, remainingBirds, mortalityPercent, survivalRate, salesOfActiveBatches };
   }, [activeBatches, entries, sales]);
 
   const totalFeed = useMemo(() => {
@@ -115,12 +115,17 @@ export default function HomePage() {
   }, [entries]);
   
   const totalRevenue = useMemo(() => {
-    return calculateTotalRevenue(sales);
-  }, [sales]);
+    return calculateTotalRevenue(salesOfActiveBatches);
+  }, [salesOfActiveBatches]);
 
   const totalProfit = useMemo(() => {
-    return sales.reduce((sum, s) => sum + (s.estimatedProfit || 0), 0);
-  }, [sales]);
+    return salesOfActiveBatches.reduce((sum, s) => sum + (s.estimatedProfit || 0), 0);
+  }, [salesOfActiveBatches]);
+
+  const activeScans = useMemo(() => {
+    if (!scans) return [];
+    return scans.filter(s => activeFarms.some(f => f.id === s.farmId));
+  }, [scans, activeFarms]);
 
   if (loadingFarms || loadingScans || loadingBatches || loadingEntries || loadingSales) {
     return <LoadingScreen />;
@@ -171,9 +176,9 @@ export default function HomePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-2xl p-6 glass">
           <h3 className="font-semibold mb-4">Recent AI Scans</h3>
-          {scans && scans.length > 0 ? (
+          {activeScans && activeScans.length > 0 ? (
             <div className="space-y-3">
-              {scans.slice(0, 5).map(scan => (
+              {activeScans.slice(0, 5).map(scan => (
                 <div key={scan.id} className="flex justify-between items-center p-3 rounded-xl bg-background/50 border border-border/50">
                   <div>
                     <p className="text-sm font-medium">{scan.result.diseaseName}</p>
@@ -219,7 +224,7 @@ export default function HomePage() {
         </div>
       </div>
       
-      <DashboardCharts batches={activeBatches} entries={entries} scans={scans ?? []} />
+      <DashboardCharts batches={activeBatches} entries={entries} scans={activeScans} />
     </div>
   );
 }

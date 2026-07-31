@@ -81,62 +81,87 @@ export const AuthRepository = {
    * Creates a new account, sets the display name, uploads logo, and creates Firestore profile.
    * Throws AuthError with a user-friendly message on failure.
    */
-  async registerWithEmail({
-    name,
-    email,
-    password,
-    companyName,
-    phoneNumber,
-    address,
-    companyEmail,
-    website,
-    gstNumber,
-    logoFile,
-  }: {
+  async registerWithEmail(params: {
     name: string;
     email: string;
     password: string;
+    ownerName: string;
     companyName: string;
     phoneNumber: string;
     address: string;
+    city: string;
+    state: string;
+    country: string;
+    pincode: string;
+    whatsappNumber?: string;
     companyEmail?: string;
-    website?: string;
     gstNumber?: string;
+    farmRegistrationNumber?: string;
+    websiteUrl?: string;
+    companyDescription?: string;
+    preferredCurrency?: string;
+    preferredWeightUnit?: string;
+    defaultFarmName?: string;
+    defaultFarmType?: string;
+    profilePhotoFile?: Blob | File;
     logoFile?: Blob | File;
   }): Promise<void> {
     try {
       const credential = await createUserWithEmailAndPassword(
         auth,
-        email.trim(),
-        password
+        params.email.trim(),
+        params.password
       );
       
       const user = credential.user;
-      await updateProfile(user, { displayName: name.trim() });
+      await updateProfile(user, { displayName: params.name.trim() });
 
       let companyLogoUrl = '';
       let companyLogoPath = '';
-
-      if (logoFile) {
+      if (params.logoFile) {
         companyLogoPath = `company-logos/${user.uid}/logo_${Date.now()}.jpg`;
         const logoRef = ref(storage, companyLogoPath);
-        await uploadBytes(logoRef, logoFile);
+        await uploadBytes(logoRef, params.logoFile);
         companyLogoUrl = await getDownloadURL(logoRef);
+      }
+
+      let profilePhotoUrl = '';
+      let profilePhotoPath = '';
+      if (params.profilePhotoFile) {
+        profilePhotoPath = `profile-photos/${user.uid}/photo_${Date.now()}.jpg`;
+        const photoRef = ref(storage, profilePhotoPath);
+        await uploadBytes(photoRef, params.profilePhotoFile);
+        profilePhotoUrl = await getDownloadURL(photoRef);
+        await updateProfile(user, { photoURL: profilePhotoUrl });
       }
 
       const now = new Date().toISOString();
       const userProfile: UserProfile = {
         uid: user.uid,
-        displayName: name.trim(),
-        email: email.trim(),
-        companyName: companyName.trim(),
-        phoneNumber: phoneNumber.trim(),
-        address: address.trim(),
-        companyEmail: companyEmail?.trim() || '',
-        website: website?.trim() || '',
-        gstNumber: gstNumber?.trim() || '',
+        displayName: params.name.trim(),
+        email: params.email.trim(),
+        ownerName: params.ownerName.trim(),
+        companyName: params.companyName.trim(),
+        phoneNumber: params.phoneNumber.trim(),
+        address: params.address.trim(),
+        city: params.city.trim(),
+        state: params.state.trim(),
+        country: params.country.trim(),
+        pincode: params.pincode.trim(),
+        whatsappNumber: params.whatsappNumber?.trim() || '',
+        companyEmail: params.companyEmail?.trim() || '',
+        gstNumber: params.gstNumber?.trim() || '',
+        farmRegistrationNumber: params.farmRegistrationNumber?.trim() || '',
+        websiteUrl: params.websiteUrl?.trim() || '',
+        companyDescription: params.companyDescription?.trim() || '',
+        preferredCurrency: params.preferredCurrency || 'INR',
+        preferredWeightUnit: params.preferredWeightUnit || 'Kg',
+        defaultFarmName: params.defaultFarmName?.trim() || '',
+        defaultFarmType: params.defaultFarmType?.trim() || '',
         companyLogoUrl,
         companyLogoPath,
+        profilePhotoUrl,
+        profilePhotoPath,
         createdAt: now,
         updatedAt: now,
       };
@@ -158,42 +183,79 @@ export const AuthRepository = {
     currentProfile: UserProfile,
     updates: Partial<UserProfile>,
     newLogoFile?: Blob | File,
-    removeLogo?: boolean
+    removeLogo?: boolean,
+    newProfilePhotoFile?: Blob | File,
+    removeProfilePhoto?: boolean
   ): Promise<void> {
-    let { companyLogoUrl, companyLogoPath } = currentProfile;
+    let { companyLogoUrl, companyLogoPath, profilePhotoUrl, profilePhotoPath } = currentProfile;
 
-    if (removeLogo || newLogoFile) {
-      // Delete old logo if it exists
-      if (companyLogoPath) {
-        try {
-          const oldLogoRef = ref(storage, companyLogoPath);
-          await deleteObject(oldLogoRef);
-        } catch (e) {
-          console.warn('Failed to delete old logo', e);
+    try {
+      if (removeLogo || newLogoFile) {
+        if (companyLogoPath) {
+          try {
+            await deleteObject(ref(storage, companyLogoPath));
+          } catch (e) {
+            console.warn('Failed to delete old logo', e);
+          }
         }
+        companyLogoUrl = '';
+        companyLogoPath = '';
       }
-      companyLogoUrl = '';
-      companyLogoPath = '';
-    }
 
-    if (newLogoFile) {
-      companyLogoPath = `company-logos/${uid}/logo_${Date.now()}.jpg`;
-      const logoRef = ref(storage, companyLogoPath);
-      await uploadBytes(logoRef, newLogoFile);
-      companyLogoUrl = await getDownloadURL(logoRef);
-    }
+      if (newLogoFile) {
+        companyLogoPath = `company-logos/${uid}/logo_${Date.now()}.jpg`;
+        const logoRef = ref(storage, companyLogoPath);
+        await uploadBytes(logoRef, newLogoFile);
+        companyLogoUrl = await getDownloadURL(logoRef);
+      }
 
-    const updatedData = {
-      ...updates,
-      companyLogoUrl,
-      companyLogoPath,
-      updatedAt: new Date().toISOString(),
-    };
+      if (removeProfilePhoto || newProfilePhotoFile) {
+        if (profilePhotoPath) {
+          try {
+            await deleteObject(ref(storage, profilePhotoPath));
+          } catch (e) {
+            console.warn('Failed to delete old profile photo', e);
+          }
+        }
+        profilePhotoUrl = '';
+        profilePhotoPath = '';
+      }
 
-    await updateDoc(doc(db, 'users', uid), updatedData);
-    
-    if (updates.displayName && auth.currentUser) {
-       await updateProfile(auth.currentUser, { displayName: updates.displayName });
+      if (newProfilePhotoFile) {
+        profilePhotoPath = `profile-photos/${uid}/photo_${Date.now()}.jpg`;
+        const photoRef = ref(storage, profilePhotoPath);
+        await uploadBytes(photoRef, newProfilePhotoFile);
+        profilePhotoUrl = await getDownloadURL(photoRef);
+      }
+
+      // Filter out undefined values
+      const safeUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
+        if (value !== undefined) acc[key] = value;
+        return acc;
+      }, {} as Record<string, unknown>);
+
+      const updatedData: Record<string, unknown> = {
+        ...safeUpdates,
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (companyLogoUrl !== undefined) updatedData.companyLogoUrl = companyLogoUrl;
+      if (companyLogoPath !== undefined) updatedData.companyLogoPath = companyLogoPath;
+      if (profilePhotoUrl !== undefined) updatedData.profilePhotoUrl = profilePhotoUrl;
+      if (profilePhotoPath !== undefined) updatedData.profilePhotoPath = profilePhotoPath;
+
+      await updateDoc(doc(db, 'users', uid), updatedData);
+      
+      const authUpdates: { displayName?: string; photoURL?: string } = {};
+      if (updates.displayName) authUpdates.displayName = updates.displayName;
+      if (profilePhotoUrl !== undefined) authUpdates.photoURL = profilePhotoUrl;
+      
+      if (Object.keys(authUpdates).length > 0 && auth.currentUser) {
+         await updateProfile(auth.currentUser, authUpdates);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message || 'Failed to update profile data or upload logo';
+      throw new AuthError(msg);
     }
   },
 

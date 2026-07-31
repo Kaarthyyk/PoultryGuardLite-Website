@@ -18,7 +18,8 @@ const STATUSES = ['Pending', 'Completed'];
 
 export function ReminderForm({ defaultValues, onSubmit, onCancel, loading }: ReminderFormProps) {
   const { data: farms = [] } = useFarms();
-  const [farmId, setFarmId] = useState(defaultValues?.farmId || (farms.length > 0 ? farms[0].id : ''));
+  const activeFarms = farms.filter((f: Farm) => !['completed', 'closed', 'archived'].includes((f.status || 'Active').trim().toLowerCase()));
+  const [farmId, setFarmId] = useState(defaultValues?.farmId || (activeFarms.length > 0 ? activeFarms[0].id : ''));
   
   const { data: batches = [] } = useBatches(farmId);
 
@@ -47,6 +48,18 @@ export function ReminderForm({ defaultValues, onSubmit, onCancel, loading }: Rem
     });
   };
 
+  const isEditing = !!defaultValues;
+  const originalFarm = farms.find((f: Farm) => f.id === defaultValues?.farmId);
+  const isOriginalFarmCompleted = isEditing && originalFarm && ['completed', 'closed', 'archived'].includes((originalFarm.status || 'Active').trim().toLowerCase());
+
+  
+  
+  // If editing a completed farm, only show that farm (it will be disabled anyway)
+  // Otherwise, show active farms. If editing an active farm, we can still show active farms.
+  const farmOptions = isOriginalFarmCompleted
+    ? (originalFarm ? [{ label: originalFarm.name, value: originalFarm.id }] : [])
+    : activeFarms.map((farm: Farm) => ({ label: farm.name, value: farm.id }));
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Select
@@ -55,7 +68,8 @@ export function ReminderForm({ defaultValues, onSubmit, onCancel, loading }: Rem
         onChange={(e) => setFarmId(e.target.value)}
         required
         placeholder="Select a farm"
-        options={farms.map((farm: Farm) => ({ label: farm.name, value: farm.id }))}
+        options={farmOptions}
+        disabled={isOriginalFarmCompleted}
       />
 
       <Select

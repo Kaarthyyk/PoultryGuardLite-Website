@@ -62,9 +62,9 @@ export async function createBrandedPDF(
     doc.text(contactParts.join(' | '), startX, currentHeaderY);
   }
 
-  if (userProfile?.website) {
+  if (userProfile?.websiteUrl) {
     currentHeaderY += 6;
-    doc.text(`Web: ${userProfile.website}`, startX, currentHeaderY);
+    doc.text(`Web: ${userProfile.websiteUrl}`, startX, currentHeaderY);
   }
 
   if (userProfile?.gstNumber) {

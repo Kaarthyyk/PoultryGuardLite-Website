@@ -201,7 +201,8 @@ export function ScanClient() {
   }
 
   const isProcessing = scanMutation.isPending;
-  const farmOptions = farms?.map((f: Farm) => ({ value: f.id, label: f.name })) ?? [];
+  const activeFarms = farms?.filter((f: Farm) => !['completed', 'closed', 'archived'].includes((f.status || 'Active').trim().toLowerCase()));
+  const farmOptions = activeFarms?.map((f: Farm) => ({ value: f.id, label: f.name })) ?? [];
   const batchOptions = batches?.map((b: Batch) => ({ value: b.id, label: b.batchName })) ?? [];
 
   return (

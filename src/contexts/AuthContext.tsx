@@ -27,19 +27,38 @@ interface AuthContextValue {
   userProfile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  register: (
-    name: string,
-    email: string,
-    password: string,
-    companyName: string,
-    phoneNumber: string,
-    address: string,
-    companyEmail?: string,
-    website?: string,
-    gstNumber?: string,
-    logoFile?: Blob | File
+  register: (params: {
+    name: string;
+    email: string;
+    password: string;
+    ownerName: string;
+    companyName: string;
+    phoneNumber: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    pincode: string;
+    whatsappNumber?: string;
+    companyEmail?: string;
+    gstNumber?: string;
+    farmRegistrationNumber?: string;
+    websiteUrl?: string;
+    companyDescription?: string;
+    preferredCurrency?: string;
+    preferredWeightUnit?: string;
+    defaultFarmName?: string;
+    defaultFarmType?: string;
+    profilePhotoFile?: Blob | File;
+    logoFile?: Blob | File;
+  }) => Promise<void>;
+  updateProfileData: (
+    updates: Partial<UserProfile>,
+    newLogo?: Blob | File,
+    removeLogo?: boolean,
+    newProfilePhoto?: Blob | File,
+    removeProfilePhoto?: boolean
   ) => Promise<void>;
-  updateProfileData: (updates: Partial<UserProfile>, newLogo?: Blob | File, removeLogo?: boolean) => Promise<void>;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -107,28 +126,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (
-      name: string,
-      email: string,
-      password: string,
-      companyName: string,
-      phoneNumber: string,
-      address: string,
-      companyEmail?: string,
-      website?: string,
-      gstNumber?: string,
-      logoFile?: Blob | File
-    ) => {
-      await AuthRepository.registerWithEmail({ 
-        name, email, password, companyName, phoneNumber, address, companyEmail, website, gstNumber, logoFile 
-      });
+    async (params: Parameters<AuthContextValue['register']>[0]) => {
+      await AuthRepository.registerWithEmail(params);
     },
     []
   );
 
-  const updateProfileData = useCallback(async (updates: Partial<UserProfile>, newLogo?: Blob | File, removeLogo?: boolean) => {
+  const updateProfileData = useCallback(async (
+    updates: Partial<UserProfile>,
+    newLogo?: Blob | File,
+    removeLogo?: boolean,
+    newProfilePhoto?: Blob | File,
+    removeProfilePhoto?: boolean
+  ) => {
     if (!user || !userProfile) throw new Error('Not authenticated');
-    await AuthRepository.updateUserProfile(user.uid, userProfile, updates, newLogo, removeLogo);
+    await AuthRepository.updateUserProfile(user.uid, userProfile, updates, newLogo, removeLogo, newProfilePhoto, removeProfilePhoto);
     // Profile will auto-update via onSnapshot listener, but we can call refresh to be safe
   }, [user, userProfile]);
 

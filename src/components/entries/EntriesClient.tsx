@@ -20,6 +20,7 @@ import { Download, Printer } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { calculateProductionWeek } from '@/lib/calculations';
 import { useAuth } from '@/contexts/AuthContext';
+import { FarmStatusBanner } from '@/components/common/FarmStatusBanner';
 
 export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: string }) {
   const { userProfile } = useAuth();
@@ -32,6 +33,9 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
 
   const { data: farms } = useFarms();
   const farm = farms?.find(f => f.id === farmId);
+  const normalizedStatus = (farm?.status || 'Active').trim().toLowerCase();
+  const isFarmCompleted = ['completed', 'closed', 'archived'].includes(normalizedStatus);
+
   const { data: batch } = useBatch(farmId, batchId);
   const { data: allScans } = useScanHistory();
 
@@ -116,6 +120,7 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
 
   return (
     <div className="space-y-6">
+      <FarmStatusBanner status={farm?.status} />
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.push(`/farms/${farmId}`)}>
           <ArrowLeft className="w-5 h-5" />
@@ -125,9 +130,15 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
           <p className="text-muted-foreground text-sm mt-1">Track metrics for this batch.</p>
         </div>
         <div className="flex-1" />
-        <Button onClick={() => handleOpenModal()} style={{ background: 'linear-gradient(135deg, #F4A900, #d4920a)', color: '#1A1200' }}>
-          + Add Entry
-        </Button>
+        <div title={isFarmCompleted ? "This farm has been completed." : ""}>
+          <Button 
+            onClick={() => handleOpenModal()} 
+            style={{ background: 'linear-gradient(135deg, #F4A900, #d4920a)', color: '#1A1200' }}
+            disabled={isFarmCompleted}
+          >
+            + Add Entry
+          </Button>
+        </div>
       </div>
 
       {entries && entries.length > 0 ? (
@@ -156,15 +167,19 @@ export function EntriesClient({ farmId, batchId }: { farmId: string; batchId: st
                   <Button size="icon" variant="ghost" title="Print" onClick={() => handleGeneratePdf(entry, 'print')}>
                     <Printer className="w-4 h-4 text-emerald-500" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => handleOpenModal(entry)}>
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10" onClick={() => {
-                    setEntryToDelete(entry);
-                    setConfirmDelete(true);
-                  }}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div title={isFarmCompleted ? "This farm has been completed." : ""}>
+                    <Button size="icon" variant="ghost" onClick={() => handleOpenModal(entry)} disabled={isFarmCompleted}>
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div title={isFarmCompleted ? "This farm has been completed." : ""}>
+                    <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10" onClick={() => {
+                      setEntryToDelete(entry);
+                      setConfirmDelete(true);
+                    }} disabled={isFarmCompleted}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
               

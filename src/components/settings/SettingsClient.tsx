@@ -6,19 +6,26 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { Bell, Lock, Palette, Cpu, ShieldAlert, Info } from 'lucide-react';
-import { updatePassword } from 'firebase/auth';
+import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import auth from '@/lib/firebase/auth';
 
 export function SettingsClient() {
   const { toast } = useToast();
   
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser || !newPassword) return;
+    if (!auth.currentUser || !auth.currentUser.email || !newPassword || !currentPassword) return;
     
+    if (newPassword !== confirmPassword) {
+      toast('New passwords do not match', 'error');
+      return;
+    }
+
     if (newPassword.length < 6) {
       toast('Password must be at least 6 characters', 'error');
       return;
@@ -26,15 +33,24 @@ export function SettingsClient() {
 
     setIsUpdatingPassword(true);
     try {
+      // Reauthenticate first
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+
       await updatePassword(auth.currentUser, newPassword);
       toast('Password updated successfully', 'success');
+      setCurrentPassword('');
       setNewPassword('');
+      setConfirmPassword('');
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (error instanceof Error && (error as any).code === 'auth/requires-recent-login') {
-        toast('Please log out and log back in to change your password.', 'error');
+      const err = error as any;
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        toast('Incorrect current password.', 'error');
+      } else if (err.code === 'auth/too-many-requests') {
+        toast('Too many attempts. Please try again later.', 'error');
       } else {
-        toast('Failed to update password', 'error');
+        toast(err.message || 'Failed to update password', 'error');
       }
     } finally {
       setIsUpdatingPassword(false);
@@ -59,6 +75,16 @@ export function SettingsClient() {
         
         <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-md">
           <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Current Password</label>
+            <Input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">New Password</label>
             <Input
               type="password"
@@ -69,7 +95,17 @@ export function SettingsClient() {
             />
             <p className="text-xs text-muted-foreground">Must be at least 6 characters long.</p>
           </div>
-          <Button type="submit" loading={isUpdatingPassword} disabled={!newPassword}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Confirm New Password</label>
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <Button type="submit" loading={isUpdatingPassword} disabled={!newPassword || !currentPassword || !confirmPassword}>
             Update Password
           </Button>
         </form>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useBatches, useAddBatch, useUpdateBatch } from '@/hooks/useBatches';
+import { useFarms } from '@/hooks/useFarms';
 import { EntryRepository } from '@/repositories/entry.repository';
 import { SaleRepository } from '@/repositories/sale.repository';
 import { calculateTotalMortality, calculateTotalBirdsSold, calculateRemainingBirds } from '@/lib/calculations';
@@ -20,14 +21,20 @@ import { createBrandedPDF } from '@/lib/pdf';
 import autoTable from 'jspdf-autotable';
 import { formatDate } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { FarmStatusBanner } from '@/components/common/FarmStatusBanner';
 
 export function BatchesClient({ farmId }: { farmId: string }) {
   const { userProfile } = useAuth();
   const router = useRouter();
+  const { data: farms } = useFarms();
   const { data: batches, isLoading, error } = useBatches(farmId);
   const addBatch = useAddBatch();
   const updateBatch = useUpdateBatch();
   const { toast } = useToast();
+
+  const farm = farms?.find((f) => f.id === farmId);
+  const normalizedStatus = (farm?.status || 'Active').trim().toLowerCase();
+  const isCompleted = ['completed', 'closed', 'archived'].includes(normalizedStatus);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBatch, setEditingBatch] = useState<Batch | undefined>();
@@ -136,6 +143,7 @@ export function BatchesClient({ farmId }: { farmId: string }) {
 
   return (
     <div className="space-y-6">
+      <FarmStatusBanner status={farm?.status} />
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.push('/farms')}>
           <ArrowLeft className="w-5 h-5" />
@@ -154,9 +162,15 @@ export function BatchesClient({ farmId }: { farmId: string }) {
             <Download className="w-4 h-4 mr-2" />
             PDF
           </Button>
-          <Button onClick={() => handleOpenModal()} style={{ background: 'linear-gradient(135deg, #F4A900, #d4920a)', color: '#1A1200' }}>
-            + Add Batch
-          </Button>
+          <div title={isCompleted ? "This farm has been completed." : ""}>
+            <Button 
+              onClick={() => handleOpenModal()} 
+              style={{ background: 'linear-gradient(135deg, #F4A900, #d4920a)', color: '#1A1200' }}
+              disabled={isCompleted}
+            >
+              + Add Batch
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -174,7 +188,8 @@ export function BatchesClient({ farmId }: { farmId: string }) {
                 key={batch.id} 
                 batch={batch} 
                 remainingBirds={remainingBirds} 
-                onEdit={handleOpenModal} 
+                onEdit={isCompleted ? undefined : handleOpenModal} 
+                isFarmCompleted={isCompleted}
               />
             );
           })}

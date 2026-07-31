@@ -15,6 +15,7 @@ import { SaleRepository } from '@/repositories/sale.repository';
 import { DashboardCharts } from '@/components/home/DashboardCharts';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { ErrorState } from '@/components/ui/States';
+import { FarmStatusBadge } from '@/components/common/FarmStatusBadge';
 import {
   calculateTotalMortality,
   calculateTotalBirdsSold,
@@ -33,7 +34,7 @@ export default function HomePage() {
   const activeFarms = useMemo(() => {
     if (!farms) return [];
     return farms.filter(f => {
-      const status = f.status?.toLowerCase();
+      const status = f.status?.trim().toLowerCase();
       return status !== 'completed' && status !== 'closed' && status !== 'archived';
     });
   }, [farms]);
@@ -200,7 +201,10 @@ export default function HomePage() {
               {activeFarms.slice(0, 5).map(farm => (
                 <div key={farm.id} className="flex justify-between items-center p-3 rounded-xl bg-background/50 border border-border/50">
                   <div>
-                    <p className="text-sm font-medium">{farm.name}</p>
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      {farm.name}
+                      <FarmStatusBadge status={farm.status} />
+                    </p>
                     <p className="text-xs text-muted-foreground">{farm.type}</p>
                   </div>
                   <div className="text-sm font-medium">

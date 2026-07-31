@@ -17,12 +17,16 @@ import { formatDate } from '@/lib/utils';
 import { generateSalesReportPdf } from '@/lib/pdf';
 import { calculateTotalRevenue, calculateTotalBirdsSold } from '@/lib/calculations';
 import { useAuth } from '@/contexts/AuthContext';
+import { FarmStatusBanner } from '@/components/common/FarmStatusBanner';
 
 export function SalesClient() {
   const { userProfile } = useAuth();
   const { data: farms, isLoading: loadingFarms } = useFarms();
   const [selectedFarmId, setSelectedFarmId] = useState<string | null>(null);
   const activeFarmId = selectedFarmId || farms?.[0]?.id || '';
+  const activeFarm = farms?.find((f) => f.id === activeFarmId);
+  const normalizedStatus = (activeFarm?.status || 'Active').trim().toLowerCase();
+  const isFarmCompleted = ['completed', 'closed', 'archived'].includes(normalizedStatus);
   
   const { data: sales, isLoading: loadingSales, error } = useSales(activeFarmId);
   const { data: batches } = useBatches(activeFarmId);
@@ -41,7 +45,6 @@ export function SalesClient() {
   if (error) return <ErrorState title="Failed to load sales" />;
 
   const handleDownloadPdf = async () => {
-    const activeFarm = farms?.find((f) => f.id === activeFarmId);
     if (!activeFarm) return;
     try {
       const doc = await generateSalesReportPdf(activeFarm, sales || [], batches || [], userProfile);
@@ -54,7 +57,6 @@ export function SalesClient() {
   };
 
   const handlePrintPdf = async () => {
-    const activeFarm = farms?.find((f) => f.id === activeFarmId);
     if (!activeFarm) return;
     try {
       const doc = await generateSalesReportPdf(activeFarm, sales || [], batches || [], userProfile);
@@ -112,6 +114,7 @@ export function SalesClient() {
 
   return (
     <div className="space-y-6">
+      <FarmStatusBanner status={activeFarm?.status} />
       <div className="flex items-center gap-4 flex-wrap">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Sales Dashboard</h2>
@@ -138,9 +141,11 @@ export function SalesClient() {
           <Button variant="outline" onClick={handlePrintPdf} disabled={loadingSales} title="Print Report">
             <Printer className="w-4 h-4 mr-2" /> Print
           </Button>
-          <Button onClick={() => handleOpenModal()} style={{ background: 'linear-gradient(135deg, #F4A900, #d4920a)', color: '#1A1200' }}>
-            + Add Sale
-          </Button>
+          <div title={isFarmCompleted ? "This farm has been completed." : ""}>
+            <Button onClick={() => handleOpenModal()} style={{ background: 'linear-gradient(135deg, #F4A900, #d4920a)', color: '#1A1200' }} disabled={isFarmCompleted}>
+              + Add Sale
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -187,15 +192,19 @@ export function SalesClient() {
                     <p className="text-xs text-muted-foreground mt-1">{sale.saleDate ? formatDate(sale.saleDate) : 'Unknown Date'} • {sale.buyerContact}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="icon" variant="ghost" onClick={() => handleOpenModal(sale)}>
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10" onClick={() => {
-                      setSaleToDelete(sale);
-                      setConfirmDelete(true);
-                    }}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div title={isFarmCompleted ? "This farm has been completed." : ""}>
+                      <Button size="icon" variant="ghost" onClick={() => handleOpenModal(sale)} disabled={isFarmCompleted}>
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div title={isFarmCompleted ? "This farm has been completed." : ""}>
+                      <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10" onClick={() => {
+                        setSaleToDelete(sale);
+                        setConfirmDelete(true);
+                      }} disabled={isFarmCompleted}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 

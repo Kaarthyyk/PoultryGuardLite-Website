@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { compressAndCropToSquare } from '@/lib/image-utils';
 
 export function ProfileClient() {
-  const { user, userProfile, updateProfileData, signOut } = useAuth();
+  const { user, userProfile, updateProfileData, refreshProfile, signOut } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -85,12 +85,14 @@ export function ProfileClient() {
         removeLogo && !logoFile
       );
       
+      await refreshProfile(); // Ensure UI reflects the new changes
       toast('Profile information saved successfully', 'success');
       setLogoFile(null);
       setRemoveLogo(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
-      toast('Failed to save profile information', 'error');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save profile information';
+      toast(errorMessage, 'error');
       console.error(err);
     } finally {
       setIsSavingContact(false);

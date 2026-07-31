@@ -27,6 +27,7 @@ const farmSchema = z.object({
   sheds: z.coerce.number().min(0, 'Sheds must be 0 or more').max(1000),
   capacity: z.coerce.number().min(0, 'Capacity must be 0 or more').max(10_000_000),
   notes: z.string().max(500).optional().default(''),
+  status: z.string().optional().default('Active'),
 });
 
 type FarmFormValues = z.infer<typeof farmSchema>;
@@ -56,8 +57,9 @@ export function FarmForm({ defaultValues, onSubmit, onCancel, loading }: FarmFor
           sheds: defaultValues.sheds,
           capacity: defaultValues.capacity,
           notes: defaultValues.notes,
+          status: defaultValues.status || 'Active',
         }
-      : { sheds: 0, capacity: 0, notes: '' },
+      : { sheds: 0, capacity: 0, notes: '', status: 'Active' },
   });
 
   useEffect(() => {
@@ -74,8 +76,16 @@ export function FarmForm({ defaultValues, onSubmit, onCancel, loading }: FarmFor
       sheds: values.sheds,
       capacity: values.capacity,
       notes: values.notes ?? '',
+      status: values.status,
     });
   };
+
+  const STATUS_OPTIONS = [
+    { value: 'Active', label: 'Active' },
+    { value: 'Completed', label: 'Completed' },
+    { value: 'Closed', label: 'Closed' },
+    { value: 'Archived', label: 'Archived' },
+  ];
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
@@ -92,6 +102,13 @@ export function FarmForm({ defaultValues, onSubmit, onCancel, loading }: FarmFor
           placeholder="Select type…"
           error={errors.type?.message}
           {...register('type')}
+        />
+        <Select
+          label="Status"
+          options={STATUS_OPTIONS}
+          placeholder="Select status…"
+          error={errors.status?.message}
+          {...register('status')}
         />
         <Input
           label="Owner Name"

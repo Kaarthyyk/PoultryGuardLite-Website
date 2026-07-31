@@ -16,10 +16,11 @@ import { calculateBatchAge } from '@/lib/calculations';
 interface BatchCardProps {
   batch: Batch;
   remainingBirds: number;
-  onEdit: (batch: Batch) => void;
+  onEdit?: (batch: Batch) => void;
+  isFarmCompleted?: boolean;
 }
 
-export function BatchCard({ batch, remainingBirds, onEdit }: BatchCardProps) {
+export function BatchCard({ batch, remainingBirds, onEdit, isFarmCompleted }: BatchCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const deleteMutation = useDeleteBatch();
@@ -96,23 +97,29 @@ export function BatchCard({ batch, remainingBirds, onEdit }: BatchCardProps) {
           >
             Weekly Entries <ChevronRight className="w-3.5 h-3.5" />
           </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => onEdit(batch)}
-            aria-label="Edit batch"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setConfirmDelete(true)}
-            aria-label="Delete batch"
-            className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
+          <div title={isFarmCompleted ? "This farm has been completed." : ""}>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onEdit?.(batch)}
+              aria-label="Edit batch"
+              disabled={isFarmCompleted || !onEdit}
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <div title={isFarmCompleted ? "This farm has been completed." : ""}>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setConfirmDelete(true)}
+              aria-label="Delete batch"
+              className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+              disabled={isFarmCompleted}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
       </motion.div>
 

@@ -17,11 +17,16 @@ interface FarmCardProps {
   onEdit: (farm: Farm) => void;
 }
 
+import { FarmStatusBadge } from '@/components/common/FarmStatusBadge';
+
 export function FarmCard({ farm, onEdit }: FarmCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const deleteMutation = useDeleteFarm();
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const normalizedStatus = (farm.status || 'Active').trim().toLowerCase();
+  const isCompleted = ['completed', 'closed', 'archived'].includes(normalizedStatus);
 
   const handleDelete = async () => {
     try {
@@ -36,14 +41,20 @@ export function FarmCard({ farm, onEdit }: FarmCardProps) {
   return (
     <>
       <motion.div
-        className="rounded-2xl border border-border bg-card p-5 hover:border-primary/30 transition-all group"
+        className="rounded-2xl border border-border bg-card p-5 hover:border-primary/30 transition-all group relative overflow-hidden"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -2 }}
         transition={{ type: 'spring', stiffness: 350, damping: 30 }}
       >
+        {isCompleted && (
+          <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none opacity-5">
+            <div className="w-full h-full bg-green-500 rounded-bl-[100px]" />
+          </div>
+        )}
+
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-4 relative z-10">
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -56,11 +67,14 @@ export function FarmCard({ farm, onEdit }: FarmCardProps) {
               <p className="text-xs text-muted-foreground mt-0.5">{formatDate(farm.createdAt)}</p>
             </div>
           </div>
-          <Badge variant="default">{farm.type}</Badge>
+          <div className="flex flex-col items-end gap-1">
+            <FarmStatusBadge status={farm.status} />
+            <Badge variant="default" className="text-[10px] py-0">{farm.type}</Badge>
+          </div>
         </div>
 
         {/* Details */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-2 mb-4 relative z-10">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">{farm.ownerName}</span>
@@ -78,7 +92,7 @@ export function FarmCard({ farm, onEdit }: FarmCardProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 pt-3 border-t border-border">
+        <div className="flex items-center gap-2 pt-3 border-t border-border relative z-10">
           <Button
             size="sm"
             variant="ghost"
@@ -87,23 +101,29 @@ export function FarmCard({ farm, onEdit }: FarmCardProps) {
           >
             View Details <ChevronRight className="w-3.5 h-3.5" />
           </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => onEdit(farm)}
-            aria-label="Edit farm"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setConfirmDelete(true)}
-            aria-label="Delete farm"
-            className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
+          <div title={isCompleted ? "This farm has been completed." : ""}>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onEdit(farm)}
+              aria-label="Edit farm"
+              disabled={isCompleted}
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <div title={isCompleted ? "This farm has been completed." : ""}>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setConfirmDelete(true)}
+              aria-label="Delete farm"
+              className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+              disabled={isCompleted}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
       </motion.div>
 

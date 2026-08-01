@@ -38,7 +38,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, userProfile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <aside
@@ -46,10 +46,7 @@ export function Sidebar() {
       style={{ borderColor: 'rgba(74,59,16,0.5)', background: '#0E0E0E' }}
     >
       <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: 'rgba(74,59,16,0.4)' }}>
-        <BrandHeader 
-          companyLogoUrl={userProfile?.companyLogoUrl}
-          companyName={userProfile?.companyName}
-        />
+        <BrandHeader />
       </div>
 
       {/* ── Navigation ────────────────────────────────────────────────── */}

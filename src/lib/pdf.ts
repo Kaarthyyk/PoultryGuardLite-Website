@@ -30,14 +30,12 @@ export async function createBrandedPDF(
   doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
   doc.setFont('Roboto', 'normal');
   
-  const logoUrl = userProfile?.companyLogoUrl || Branding.reports.headerLogo;
+  const logoUrl = Branding.reports.headerLogo;
   let logoData: string | null = null;
   
   try {
-    if (logoUrl) {
-      logoData = await fetchImageAsBase64(logoUrl);
-      doc.addImage(logoData, 'PNG', 14, 10, 40, 40, '', 'FAST'); // assuming square logo, 40x40
-    }
+    logoData = await fetchImageAsBase64(logoUrl);
+    doc.addImage(logoData, 'PNG', 14, 10, 40, 40, '', 'FAST'); // assuming square logo, 40x40
   } catch {
     // Silent fallback
   }
@@ -48,36 +46,13 @@ export async function createBrandedPDF(
   
   doc.setFontSize(16);
   doc.setTextColor('#F4A900'); 
-  doc.text(userProfile?.companyName || Branding.appName, startX, currentHeaderY);
+  doc.text(Branding.appName, startX, currentHeaderY);
   
   doc.setFontSize(10);
   doc.setTextColor(100);
   
-  if (userProfile?.address) {
-    currentHeaderY += 6;
-    doc.text(userProfile.address, startX, currentHeaderY);
-  } else {
-    currentHeaderY += 6;
-    doc.text(Branding.tagline, startX, currentHeaderY);
-  }
-
-  if (userProfile?.phoneNumber || userProfile?.companyEmail) {
-    currentHeaderY += 6;
-    const contactParts = [];
-    if (userProfile.phoneNumber) contactParts.push(`Tel: ${userProfile.phoneNumber}`);
-    if (userProfile.companyEmail) contactParts.push(`Email: ${userProfile.companyEmail}`);
-    doc.text(contactParts.join(' | '), startX, currentHeaderY);
-  }
-
-  if (userProfile?.websiteUrl) {
-    currentHeaderY += 6;
-    doc.text(`Web: ${userProfile.websiteUrl}`, startX, currentHeaderY);
-  }
-
-  if (userProfile?.gstNumber) {
-    currentHeaderY += 6;
-    doc.text(`GST/VAT: ${userProfile.gstNumber}`, startX, currentHeaderY);
-  }
+  currentHeaderY += 6;
+  doc.text(Branding.tagline, startX, currentHeaderY);
 
   // Tagline / Date on the right
   const now = new Date();
@@ -105,7 +80,7 @@ export async function createBrandedPDF(
       
       doc.setFontSize(10);
       doc.setTextColor('#F4A900');
-      doc.text(userProfile?.companyName || Branding.appName, 14, pageHeight - 8);
+      doc.text(Branding.appName, 14, pageHeight - 8);
       
       doc.setFontSize(8);
       doc.setTextColor(120);

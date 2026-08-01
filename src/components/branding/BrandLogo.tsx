@@ -6,8 +6,6 @@ interface Props {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   clickable?: boolean;
-  companyLogoUrl?: string;
-  companyName?: string;
 }
 
 const sizes = {
@@ -22,27 +20,11 @@ export function BrandLogo({
   size = 'md', 
   className = '', 
   clickable = false,
-  companyLogoUrl,
-  companyName
 }: Props) {
   const defaultSrc = Branding.logos[variant] || Branding.logos.horizontal;
-  const { width, height, iconSize, text } = sizes[size];
+  const { width, height } = sizes[size];
   
-  const content = companyLogoUrl ? (
-    <div className={`flex items-center gap-2 ${className}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img 
-        src={companyLogoUrl} 
-        alt={companyName || 'Company Logo'}
-        style={{ width: iconSize, height: iconSize, objectFit: 'contain', borderRadius: '8px' }}
-      />
-      {variant !== 'stacked' && (
-        <span className={`font-bold ${text} text-foreground truncate`} style={{ maxWidth: width - iconSize - 10 }}>
-          {companyName || Branding.appName}
-        </span>
-      )}
-    </div>
-  ) : (
+  const content = (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img 

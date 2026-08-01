@@ -45,7 +45,7 @@ function usePageTitle(): string {
 
 export function TopBar() {
   const title = usePageTitle();
-  const { user, userProfile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -74,8 +74,6 @@ export function TopBar() {
             <BrandLogo 
               variant="horizontal" 
               size="sm" 
-              companyLogoUrl={userProfile?.companyLogoUrl}
-              companyName={userProfile?.companyName}
             />
           </div>
           
@@ -84,8 +82,6 @@ export function TopBar() {
             <BrandLogo 
               variant="horizontal" 
               size="sm" 
-              companyLogoUrl={userProfile?.companyLogoUrl}
-              companyName={userProfile?.companyName}
             />
             <div className="w-px h-4 bg-border mx-2" />
             <h1 className="text-base font-semibold text-foreground">{title}</h1>
@@ -94,23 +90,13 @@ export function TopBar() {
 
         {/* User avatar */}
         <div className="flex items-center gap-3">
-          {user?.photoURL ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img 
-              src={user.photoURL} 
-              alt="Profile" 
-              className="w-8 h-8 rounded-full object-cover cursor-pointer border border-primary/20"
-              title={user.email ?? undefined}
-            />
-          ) : (
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer"
-              style={{ background: 'rgba(244,169,0,0.2)', color: '#F4A900' }}
-              title={user?.email ?? undefined}
-            >
-              {(user?.displayName ?? user?.email ?? 'U').charAt(0).toUpperCase()}
-            </div>
-          )}
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer"
+            style={{ background: 'rgba(244,169,0,0.2)', color: '#F4A900' }}
+            title={user?.email ?? undefined}
+          >
+            {(user?.displayName ?? user?.email ?? 'U').charAt(0).toUpperCase()}
+          </div>
         </div>
       </header>
 
@@ -138,10 +124,7 @@ export function TopBar() {
                 className="flex items-center gap-3 px-5 py-5 border-b"
                 style={{ borderColor: 'rgba(74,59,16,0.4)' }}
               >
-                <BrandHeader 
-                  companyLogoUrl={userProfile?.companyLogoUrl}
-                  companyName={userProfile?.companyName}
-                />
+                <BrandHeader />
               </div>
 
               {/* Nav items */}

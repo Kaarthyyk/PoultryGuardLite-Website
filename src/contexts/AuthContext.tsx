@@ -57,7 +57,8 @@ interface AuthContextValue {
     newLogo?: Blob | File,
     removeLogo?: boolean,
     newProfilePhoto?: Blob | File,
-    removeProfilePhoto?: boolean
+    removeProfilePhoto?: boolean,
+    onProgress?: (progress: number | string) => void
   ) => Promise<void>;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -137,11 +138,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     newLogo?: Blob | File,
     removeLogo?: boolean,
     newProfilePhoto?: Blob | File,
-    removeProfilePhoto?: boolean
+    removeProfilePhoto?: boolean,
+    onProgress?: (progress: number | string) => void
   ) => {
     if (!user || !userProfile) throw new Error('Not authenticated');
-    await AuthRepository.updateUserProfile(user.uid, userProfile, updates, newLogo, removeLogo, newProfilePhoto, removeProfilePhoto);
-    // Profile will auto-update via onSnapshot listener, but we can call refresh to be safe
+    await AuthRepository.updateUserProfile(user.uid, userProfile, updates, newLogo, removeLogo, newProfilePhoto, removeProfilePhoto, onProgress);
+    // Profile will auto-update via onSnapshot listener
   }, [user, userProfile]);
 
   const signOut = useCallback(async () => {

@@ -13,7 +13,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from 'firebase/storage';
 import auth from '@/lib/firebase/auth';
 import db from '@/lib/firebase/firestore';
 import storage from '@/lib/firebase/storage';
@@ -185,7 +185,8 @@ export const AuthRepository = {
     newLogoFile?: Blob | File,
     removeLogo?: boolean,
     newProfilePhotoFile?: Blob | File,
-    removeProfilePhoto?: boolean
+    removeProfilePhoto?: boolean,
+    onProgress?: (progress: number | string) => void
   ): Promise<void> {
     let { companyLogoUrl, companyLogoPath, profilePhotoUrl, profilePhotoPath } = currentProfile;
 
@@ -205,7 +206,26 @@ export const AuthRepository = {
       if (newLogoFile) {
         companyLogoPath = `company-logos/${uid}/logo_${Date.now()}.jpg`;
         const logoRef = ref(storage, companyLogoPath);
-        await uploadBytes(logoRef, newLogoFile);
+        
+        onProgress?.(0);
+        const uploadTask = uploadBytesResumable(logoRef, newLogoFile);
+        
+        await new Promise<void>((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              onProgress?.(Math.round(progress));
+            },
+            (error) => {
+              reject(error);
+            },
+            () => {
+              resolve();
+            }
+          );
+        });
+
         companyLogoUrl = await getDownloadURL(logoRef);
       }
 
@@ -244,6 +264,7 @@ export const AuthRepository = {
       if (profilePhotoUrl !== undefined) updatedData.profilePhotoUrl = profilePhotoUrl;
       if (profilePhotoPath !== undefined) updatedData.profilePhotoPath = profilePhotoPath;
 
+      onProgress?.('Saving Profile...');
       await updateDoc(doc(db, 'users', uid), updatedData);
       
       const authUpdates: { displayName?: string; photoURL?: string } = {};

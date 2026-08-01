@@ -8,17 +8,18 @@ import { useToast } from '@/components/ui/Toast';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { User, Mail, LogOut, Loader2, Building, Phone, MapPin, Globe, CreditCard, UploadCloud, X, Hash, Map, Settings, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
+
 import { compressAndCropToSquare } from '@/lib/image-utils';
 
 export function ProfileClient() {
-  const { user, userProfile, updateProfileData, refreshProfile, signOut } = useAuth();
+  const { user, userProfile, updateProfileData, signOut } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  
   
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState<string | null>(null);
+  const isSaving = saveProgress !== null;
   const [isEditing, setIsEditing] = useState(false);
   
   // Personal Info
@@ -110,16 +111,20 @@ export function ProfileClient() {
     e.preventDefault();
     if (!user?.uid) return;
     
-    setIsSaving(true);
+    setSaveProgress('Saving Profile...');
     try {
       let finalLogo: Blob | undefined = undefined;
       let finalPhoto: Blob | undefined = undefined;
       
       if (logoFile) {
-        try {
-          finalLogo = await compressAndCropToSquare(logoFile, 400, 0.85);
-        } catch (e) {
-          console.error("Failed to compress logo", e);
+        if (logoFile.size > 500 * 1024) {
+          try {
+            finalLogo = await compressAndCropToSquare(logoFile, 400, 0.85);
+          } catch (e) {
+            console.error("Failed to compress logo", e);
+            finalLogo = logoFile;
+          }
+        } else {
           finalLogo = logoFile;
         }
       }
@@ -158,11 +163,16 @@ export function ProfileClient() {
         finalLogo,
         removeLogo && !logoFile,
         finalPhoto,
-        removePhoto && !photoFile
+        removePhoto && !photoFile,
+        (progress) => {
+          if (typeof progress === 'number') {
+            setSaveProgress(`Uploading Logo... ${progress}%`);
+          } else {
+            setSaveProgress(progress);
+          }
+        }
       );
       
-      await refreshProfile();
-      await queryClient.invalidateQueries();
       toast('✅ Profile Updated Successfully', 'success');
       
       setIsEditing(false);
@@ -172,7 +182,7 @@ export function ProfileClient() {
       toast(errorMessage, 'error');
       console.error(err);
     } finally {
-      setIsSaving(false);
+      setSaveProgress(null);
     }
   };
 
@@ -272,7 +282,7 @@ export function ProfileClient() {
                 Cancel
               </Button>
               <Button type="submit" onClick={handleSave} loading={isSaving} className="w-full sm:w-auto px-8" style={{ background: 'linear-gradient(135deg, #F4A900 0%, #d4920a 100%)', color: '#1A1200' }}>
-                Save Changes
+                {saveProgress || 'Save Changes'}
               </Button>
             </>
           )}

@@ -129,7 +129,7 @@ export async function generateWeeklyReportPdf(
   scans: ScanHistory[],
   userProfile: UserProfile | null
 ) {
-  const { doc, startY, addFooter } = await createBrandedPDF(`Weekly Report: ${batch.batchName}`, userProfile, 'portrait');
+  const { doc, startY, addFooter, pageWidth } = await createBrandedPDF(`Weekly Report: ${batch.batchName}`, userProfile, 'portrait');
 
   doc.setFontSize(12);
   doc.setTextColor(50);

@@ -32,18 +32,33 @@ export async function createBrandedPDF(
   
   const logoUrl = Branding.reports.headerLogo;
   let logoData: string | null = null;
+  const startX = 14;
+  let currentHeaderY = 16;
   
   try {
     logoData = await fetchImageAsBase64(logoUrl);
-    doc.addImage(logoData, 'PNG', 14, 10, 40, 40, '', 'FAST'); // assuming square logo, 40x40
+    if (logoData) {
+      const props = doc.getImageProperties(logoData);
+      const ratio = props.width / props.height;
+      
+      let logoHeight = 50;
+      let logoWidth = logoHeight * ratio;
+      
+      if (logoWidth > 50) {
+        logoWidth = 50;
+        logoHeight = logoWidth / ratio;
+      }
+      
+      doc.addImage(logoData, 'PNG', startX, 10, logoWidth, logoHeight, '', 'FAST');
+      
+      // Add spacing below logo for vertical alignment
+      currentHeaderY = 10 + logoHeight + 12;
+    }
   } catch {
     // Silent fallback
   }
 
   // Header Text
-  const startX = logoData ? 60 : 14;
-  let currentHeaderY = 16;
-  
   doc.setFontSize(16);
   doc.setTextColor('#F4A900'); 
   doc.text(Branding.appName, startX, currentHeaderY);
@@ -118,11 +133,21 @@ export async function generateWeeklyReportPdf(
 
   doc.setFontSize(12);
   doc.setTextColor(50);
-  doc.text(`Farm: ${farm.name}`, 14, startY);
-  doc.text(`Batch: ${batch.batchName}`, 14, startY + 8);
-  doc.text(`Initial Birds: ${batch.totalBirds}`, 14, startY + 16);
-
-  let currentY = startY + 28;
+  
+  let currentY = startY;
+  const maxWidth = pageWidth - 28;
+  const lineHeight = 6;
+  
+  const farmLines = doc.splitTextToSize(`Farm: ${farm.name}`, maxWidth);
+  doc.text(farmLines, 14, currentY);
+  currentY += (farmLines.length * lineHeight) + 2;
+  
+  const batchLines = doc.splitTextToSize(`Batch: ${batch.batchName}`, maxWidth);
+  doc.text(batchLines, 14, currentY);
+  currentY += (batchLines.length * lineHeight) + 2;
+  
+  doc.text(`Initial Birds: ${batch.totalBirds}`, 14, currentY);
+  currentY += lineHeight + 10;
 
   // Entries Table
   if (entries.length > 0) {
@@ -210,15 +235,34 @@ export async function generateSalesReportPdf(
   doc.setFontSize(10);
   doc.setTextColor(50);
   doc.setFont('Roboto', 'normal');
-  doc.text(`Farm Name: ${farm.name}`, 14, startY + 6);
-  doc.text(`Owner Name: ${farm.ownerName}`, 14, startY + 12);
-  doc.text(`Location: ${farm.address || 'N/A'}`, pageWidth / 2, startY + 6);
+  
+  const leftColX = 14;
+  const rightColX = pageWidth / 2;
+  const colMaxWidth = (pageWidth / 2) - 28;
+  const lineHeight = 5;
+  
+  let leftY = startY + 6;
+  const farmLines = doc.splitTextToSize(`Farm Name: ${farm.name}`, colMaxWidth);
+  doc.text(farmLines, leftColX, leftY);
+  leftY += farmLines.length * lineHeight + 1;
+  
+  const ownerLines = doc.splitTextToSize(`Owner Name: ${farm.ownerName}`, colMaxWidth);
+  doc.text(ownerLines, leftColX, leftY);
+  leftY += ownerLines.length * lineHeight;
+  
+  let rightY = startY + 6;
+  const locationLines = doc.splitTextToSize(`Location: ${farm.address || 'N/A'}`, colMaxWidth);
+  doc.text(locationLines, rightColX, rightY);
+  rightY += locationLines.length * lineHeight + 1;
   
   const activeBatches = batches.filter(b => b.status === 'Active').length;
-  doc.text(`Active Batches: ${activeBatches}`, pageWidth / 2, startY + 12);
+  doc.text(`Active Batches: ${activeBatches}`, rightColX, rightY);
+  rightY += lineHeight;
+  
+  const sectionBottomY = Math.max(leftY, rightY);
   
   doc.setDrawColor(220);
-  doc.line(14, startY + 16, pageWidth - 14, startY + 16);
+  doc.line(14, sectionBottomY + 4, pageWidth - 14, sectionBottomY + 4);
 
   // SUMMARY CARDS
   const totalRevenue = calculateTotalRevenue(sales);
@@ -228,7 +272,7 @@ export async function generateSalesReportPdf(
   const totalProfit = sales.reduce((acc, sale) => acc + (sale.estimatedProfit || 0), 0);
   const numberOfSales = sales.length;
 
-  let currentY = startY + 24;
+  let currentY = sectionBottomY + 12;
   doc.setFontSize(12);
   doc.setTextColor(20);
   doc.setFont('Roboto', 'bold');
@@ -311,14 +355,21 @@ export async function generateSalesReportPdf(
     const mostSoldBatchId = Object.keys(batchSalesCount).reduce((a, b) => batchSalesCount[a] > batchSalesCount[b] ? a : b, '');
     const mostSoldBatchName = batchMap.get(mostSoldBatchId) || 'Unknown';
 
-    doc.text(`Highest Sale: ${formatCurrency(highestSale)}`, 14, currentY + 8);
-    doc.text(`Lowest Sale: ${formatCurrency(lowestSale)}`, 14, currentY + 14);
+    let col1Y = currentY + 8;
+    doc.text(`Highest Sale: ${formatCurrency(highestSale)}`, 14, col1Y);
+    col1Y += 6;
+    doc.text(`Lowest Sale: ${formatCurrency(lowestSale)}`, 14, col1Y);
     
-    doc.text(`Avg Revenue / Sale: ${formatCurrency(avgRevPerSale)}`, 14 + cw * 1.5, currentY + 8);
-    doc.text(`Avg Birds Sold: ${avgBirdsSold}`, 14 + cw * 1.5, currentY + 14);
+    let col2Y = currentY + 8;
+    doc.text(`Avg Revenue / Sale: ${formatCurrency(avgRevPerSale)}`, 14 + cw * 1.5, col2Y);
+    col2Y += 6;
+    doc.text(`Avg Birds Sold: ${avgBirdsSold}`, 14 + cw * 1.5, col2Y);
     
-    doc.text(`Most Sold Batch: ${mostSoldBatchName}`, 14 + cw * 3, currentY + 8);
-    doc.text(`Total Sales Value: ${formatCurrency(totalRevenue)}`, 14 + cw * 3, currentY + 14);
+    let col3Y = currentY + 8;
+    const batchLines = doc.splitTextToSize(`Most Sold Batch: ${mostSoldBatchName}`, cw * 1.8);
+    doc.text(batchLines, 14 + cw * 3, col3Y);
+    col3Y += batchLines.length * 6;
+    doc.text(`Total Sales Value: ${formatCurrency(totalRevenue)}`, 14 + cw * 3, col3Y);
 
   } else {
     doc.setFontSize(12);

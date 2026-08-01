@@ -135,6 +135,7 @@ export function BatchesClient({ farmId }: { farmId: string }) {
       startY,
       head: [['Batch Name', 'Type', 'Breed', 'Status', 'Birds', 'Arrival Date']],
       body: tableData,
+      styles: { font: 'Roboto' }
     });
     
     addFooter();

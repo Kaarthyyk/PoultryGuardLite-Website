@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { formatDate } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { RobotoRegular, RobotoBold } from '@/lib/fonts';
 import { useToast } from '@/components/ui/Toast';
 
 export function ScanDetailsClient({ scanId }: { scanId: string }) {
@@ -23,6 +24,12 @@ export function ScanDetailsClient({ scanId }: { scanId: string }) {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
+    
+    doc.addFileToVFS('Roboto-Regular.ttf', RobotoRegular);
+    doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+    doc.addFileToVFS('Roboto-Bold.ttf', RobotoBold);
+    doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+    doc.setFont('Roboto', 'normal');
     
     doc.setFontSize(22);
     doc.text('PoultryGuardLite - AI Scan Report', 14, 22);
@@ -43,7 +50,8 @@ export function ScanDetailsClient({ scanId }: { scanId: string }) {
         ['Severity', scan.result.severity],
         ['Isolation Required', scan.result.isolationRequired ? 'Yes' : 'No'],
       ],
-      theme: 'grid'
+      theme: 'grid',
+      styles: { font: 'Roboto' }
     });
 
     autoTable(doc, {
@@ -56,7 +64,7 @@ export function ScanDetailsClient({ scanId }: { scanId: string }) {
         ['Prevention', scan.result.prevention],
       ],
       theme: 'grid',
-      styles: { cellWidth: 'wrap' },
+      styles: { cellWidth: 'wrap', font: 'Roboto' },
       columnStyles: {
         0: { cellWidth: 40 },
         1: { cellWidth: 'auto' }

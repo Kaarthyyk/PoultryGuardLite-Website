@@ -75,6 +75,7 @@ export function FarmsClient() {
       startY,
       head: [['Farm Name', 'Type', 'Capacity', 'Sheds', 'Owner', 'Created Date']],
       body: tableData,
+      styles: { font: 'Roboto' }
     });
     
     addFooter();

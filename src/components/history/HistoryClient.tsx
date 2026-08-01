@@ -61,6 +61,7 @@ export function HistoryClient() {
       startY,
       head: [['Date', 'Farm', 'Batch', 'Disease', 'Confidence', 'Severity']],
       body: tableData,
+      styles: { font: 'Roboto' }
     });
     
     addFooter();

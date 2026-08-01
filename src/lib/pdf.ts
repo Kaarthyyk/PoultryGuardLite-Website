@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { formatCurrency } from '@/lib/currency';
 import type { Farm, Batch, WeeklyEntry, ScanHistory, Sale, UserProfile } from '@/types/models';
 import { calculateTotalRevenue, calculateTotalBirdsSold, calculateProductionWeek } from '@/lib/calculations';
+import { RobotoRegular, RobotoBold } from '@/lib/fonts';
 
 /**
  * Creates a standard jsPDF document with the company branding if available, or PoultryGuardLite branding as fallback.
@@ -22,6 +23,12 @@ export async function createBrandedPDF(
   const doc = new jsPDF({ orientation });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
+
+  doc.addFileToVFS('Roboto-Regular.ttf', RobotoRegular);
+  doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+  doc.addFileToVFS('Roboto-Bold.ttf', RobotoBold);
+  doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+  doc.setFont('Roboto', 'normal');
   
   const logoUrl = userProfile?.companyLogoUrl || Branding.reports.headerLogo;
   let logoData: string | null = null;
@@ -163,7 +170,7 @@ export async function generateWeeklyReportPdf(
       body: tableData,
       theme: 'grid',
       headStyles: { fillColor: '#F4A900', textColor: '#ffffff' },
-      styles: { fontSize: 10 },
+      styles: { fontSize: 10, font: 'Roboto' },
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -194,7 +201,7 @@ export async function generateWeeklyReportPdf(
       body: scanData,
       theme: 'grid',
       headStyles: { fillColor: '#F4A900', textColor: '#ffffff' },
-      styles: { fontSize: 10 },
+      styles: { fontSize: 10, font: 'Roboto' },
       didParseCell: function(data) {
         if (data.section === 'body' && data.column.index === 3) {
           const severity = data.cell.raw;
@@ -222,12 +229,12 @@ export async function generateSalesReportPdf(
   // FARM INFORMATION
   doc.setFontSize(12);
   doc.setTextColor(20);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('Roboto', 'bold');
   doc.text('FARM INFORMATION', 14, startY);
   
   doc.setFontSize(10);
   doc.setTextColor(50);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('Roboto', 'normal');
   doc.text(`Farm Name: ${farm.name}`, 14, startY + 6);
   doc.text(`Owner Name: ${farm.ownerName}`, 14, startY + 12);
   doc.text(`Location: ${farm.address || 'N/A'}`, pageWidth / 2, startY + 6);
@@ -249,12 +256,12 @@ export async function generateSalesReportPdf(
   let currentY = startY + 24;
   doc.setFontSize(12);
   doc.setTextColor(20);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('Roboto', 'bold');
   doc.text('SUMMARY', 14, currentY);
   
   doc.setFontSize(10);
   doc.setTextColor(50);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('Roboto', 'normal');
   const cw = (pageWidth - 28) / 5; // column width
   doc.text(`Total Revenue\n${formatCurrency(totalRevenue)}`, 14, currentY + 6);
   doc.text(`Birds Sold\n${totalBirdsSold.toLocaleString()}`, 14 + cw, currentY + 6);
@@ -272,9 +279,9 @@ export async function generateSalesReportPdf(
     // SALES TABLE
     doc.setFontSize(12);
     doc.setTextColor(20);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('Roboto', 'bold');
     doc.text('SALES RECORDS', 14, currentY);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('Roboto', 'normal');
 
     const tableData = sales.map(s => [
       s.saleDate ? formatDate(s.saleDate) : 'Unknown',
@@ -294,7 +301,7 @@ export async function generateSalesReportPdf(
       body: tableData,
       theme: 'grid',
       headStyles: { fillColor: '#F4A900', textColor: '#ffffff' },
-      styles: { fontSize: 9 },
+      styles: { fontSize: 9, font: 'Roboto' },
     });
 
     // ANALYTICS SECTION
@@ -309,12 +316,12 @@ export async function generateSalesReportPdf(
 
     doc.setFontSize(12);
     doc.setTextColor(20);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('Roboto', 'bold');
     doc.text('ANALYTICS', 14, currentY);
     
     doc.setFontSize(10);
     doc.setTextColor(50);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('Roboto', 'normal');
 
     const highestSale = Math.max(...sales.map(s => s.revenue));
     const lowestSale = Math.min(...sales.map(s => s.revenue));
